@@ -1,0 +1,10 @@
+{
+    "compilerOptions": {
+        "noCheck": true,
+        "skipLibCheck": true,
+        "noEmit": true
+    },
+    "include": [
+        "**/*.ts"
+    ]
+}

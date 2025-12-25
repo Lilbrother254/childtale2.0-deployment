@@ -1,0 +1,6 @@
+{
+    "imports": {
+        "std/": "https://deno.land/std@0.168.0/",
+        "generative-ai": "npm:@google/genai@^1.34.0"
+    }
+}
