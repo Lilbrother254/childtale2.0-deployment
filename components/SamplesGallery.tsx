@@ -12,7 +12,7 @@ export const SamplesGallery: React.FC = () => {
     const samples: Sample[] = [
         { title: "CEO Johnte's Big Dream", filename: "ceo_johnte_s_big_dream_coloring_book.pdf", theme: "Adventure" },
         { title: "Iron Sponge: The Ultimate Pilot", filename: "iron_sponge__the_ultimate_pilot_coloring_book.pdf", theme: "Adventure" },
-        { title: "Joy's Big Flight", filename: "joy_s_big_flight_interior.pdf", theme: "Adventure" },
+
         { title: "Joy's Gelatinous Journey", filename: "joy_s_gelatinous_journey_coloring_book.pdf", theme: "Fantasy" },
         { title: "Leo and the Trip to Bikini Bottom", filename: "leo_and_the_trip_to_bikini_bottom_interior.pdf", theme: "Fantasy" },
         { title: "Leo's Big Day at the Farm", filename: "leo_s_big_day_at_the_farm_coloring_book.pdf", theme: "Animals" },
