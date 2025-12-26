@@ -48,14 +48,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
         const handleScroll = () => setScrollY(window.scrollY);
         window.addEventListener('scroll', handleScroll);
 
-        // Cookie consent check with 2s delay
+        // Cookie consent check
         const consent = localStorage.getItem('childtale-cookie-consent');
         if (!consent) {
-            const timer = setTimeout(() => setShowCookieBanner(true), 2000);
-            return () => {
-                window.removeEventListener('scroll', handleScroll);
-                clearTimeout(timer);
-            };
+            setShowCookieBanner(true);
         }
 
         return () => window.removeEventListener('scroll', handleScroll);
@@ -299,21 +295,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
                 </div>
             </footer>
 
-            {/* Cookie Consent Snackbar (Delayed & Slim) */}
+            {/* Cookie Consent Banner */}
             {showCookieBanner && (
-                <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:w-80 z-[200] animate-fade-in-up">
-                    <div className="bg-white/90 backdrop-blur-xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-2xl p-4 flex items-center gap-4">
-                        <div className="flex-grow">
-                            <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest leading-relaxed">
-                                Experience enhanced magic with our <button onClick={() => handleNavClick('COOKIES')} className="text-indigo-600 underline">cookies</button>.
-                            </p>
+                <div className="fixed bottom-6 left-6 right-6 md:left-auto md:w-96 z-[110] bg-white rounded-2xl shadow-2xl p-6 border border-slate-100 animate-fade-in">
+                    <div className="flex items-start gap-4">
+                        <div className="bg-indigo-50 p-2 rounded-xl">
+                            <SparklesIcon className="w-6 h-6 text-indigo-600" />
                         </div>
-                        <button
-                            onClick={acceptCookies}
-                            className="bg-slate-900 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all flex-shrink-0"
-                        >
-                            Got it!
-                        </button>
+                        <div className="space-y-3">
+                            <h4 className="font-black text-slate-900 text-lg">Cookies & Privacy</h4>
+                            <p className="text-sm text-slate-500 font-bold leading-relaxed">
+                                We use cookies to ensure you get the best experience on ChildTale, compliant with GDPR and CCPA.
+                                <button onClick={() => handleNavClick('COOKIES')} className="text-indigo-600 hover:underline ml-1">Learn more</button>.
+                            </p>
+                            <button
+                                onClick={acceptCookies}
+                                className="w-full bg-slate-900 text-white py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all"
+                            >
+                                Got it!
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

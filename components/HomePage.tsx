@@ -20,98 +20,98 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
                <ArtCrayon color="#22c55e" className="absolute bottom-40 right-1/4 w-24 h-24 opacity-60" rotation="30" />
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-12 items-center relative z-10">
-               <div className="space-y-6 md:space-y-8 animate-fade-in-up relative">
+            <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10">
+               {/* Content Side: Emotional & Punchy */}
+               <div className="space-y-6 md:space-y-10 animate-fade-in-up relative order-2 lg:order-1 text-center lg:text-left">
                   <div className="relative">
-                     <div className="inline-block bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-[12px] md:text-sm font-bold tracking-wide border border-indigo-100 mb-4 shadow-sm">
+                     <div className="inline-block bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-[10px] md:text-sm font-bold tracking-[0.2em] uppercase border border-indigo-100 mb-6 shadow-sm">
                         ✨ #1 Personalized Coloring Book Creator
                      </div>
 
-                     <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold font-['Nunito'] leading-[1.1] text-slate-900 relative z-10 tracking-tight">
-                        <span className="text-red-500 inline-block animate-bounce">♥</span>
-                        They're Only <br />Little Once.
+                     <h1 className="text-4xl md:text-6xl lg:text-8xl font-black font-['Nunito'] leading-[1.05] text-slate-900 tracking-tight">
+                        <span className="text-red-500 inline-block animate-pulse">♥</span>
+                        They're Only <br className="hidden md:block" /> Little Once.
                      </h1>
-                     <h2 className="text-2xl md:text-4xl font-extrabold font-['Nunito'] text-indigo-600 mt-2 relative inline-block tracking-tight">
-                        Capture It Before It's Gone.
+                     <h2 className="text-xl md:text-3xl lg:text-4xl font-extrabold font-['Nunito'] text-indigo-600 mt-4 tracking-tight leading-tight">
+                        Capture the magic before it's gone.
                      </h2>
                   </div>
 
-                  <div className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-lg font-medium space-y-4">
+                  <div className="text-base md:text-xl text-slate-600 leading-relaxed max-w-lg mx-auto lg:mx-0 font-medium">
                      <p>
-                        Turn their dreams and memories into a <span className="font-bold text-slate-900 bg-yellow-100 px-1">25-page custom coloring book</span> where <span className="font-bold text-slate-900">THEY are the main character</span>.
+                        Turn their dreams into a 25-page <span className="font-bold text-slate-900 bg-yellow-100 px-1">custom coloring book</span> where <span className="font-black text-indigo-600">THEY</span> are the hero.
                      </p>
                   </div>
 
-                  <div className="bg-white border-2 border-blue-100 p-5 rounded-2xl flex gap-3 items-start max-w-lg shadow-lg transform -rotate-1 relative z-20">
-                     <div className="text-3xl">💛</div>
-                     <div>
-                        <p className="text-slate-700 italic font-medium leading-snug">
-                           "I made one when she was 4. She's 8 now and still has it. It's the only book she refused to donate."
-                        </p>
-                        <p className="text-xs font-bold text-blue-600 mt-2 uppercase tracking-wide">— Happy ChildTale Parent</p>
-                     </div>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
+                     <button
+                        onClick={onStartCreating}
+                        className="bg-[#FF721F] hover:bg-[#FF853A] text-white px-10 py-5 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl shadow-orange-200 transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-3"
+                     >
+                        <SparklesIcon className="w-5 h-5" />
+                        Start Free Story
+                     </button>
                   </div>
                </div>
 
-               <div className="relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
-                  <div className="relative rounded-[1rem] overflow-hidden shadow-2xl border-[2px] border-slate-200 group transform rotate-1 hover:rotate-0 transition-transform duration-500 bg-white aspect-[3/4] flex flex-col">
-                     <div className="pt-8 px-8 text-center bg-white z-10">
-                        <h2 className="text-4xl font-['Comic_Neue'] font-bold text-white drop-shadow-[0_2px_0_rgba(0,0,0,1)] [-webkit-text-stroke:1.5px_black] tracking-wide mb-2">
-                           Vinny's First Day
-                        </h2>
+               {/* Visual Side: The "Magic" Tablet (Hero on Mobile) */}
+               <div className="relative animate-fade-in-up order-1 lg:order-2" style={{ animationDelay: '0.2s' }}>
+                  <div className="relative w-full max-w-[480px] mx-auto aspect-[3/4] bg-[#0F172A] rounded-[2.5rem] p-3 shadow-[0_50px_100px_rgba(0,0,0,0.15)] border border-slate-800 transform lg:rotate-2 hover:rotate-0 transition-all duration-700 ring-8 ring-slate-900 ring-opacity-10">
+                     <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rounded-full z-20 border border-slate-700 opacity-50"></div>
+
+                     {/* The Heart of the App: Coloring Demo */}
+                     <div className="w-full h-full rounded-[2rem] overflow-hidden bg-white">
+                        <InteractiveTabletDemo onCTA={onStartCreating} />
                      </div>
-                     <div className="flex-grow px-4 pb-4 relative flex items-center justify-center bg-white">
-                        <img
-                           src="/hero-drawing.jpg"
-                           alt="Vinny's First Day"
-                           className="w-full h-full object-contain animate-fade-in"
-                        />
-                     </div>
-                     <div className="px-8 pb-12 pt-2 text-center bg-white z-10">
-                        <p className="font-['Comic_Neue'] text-lg font-bold leading-relaxed text-slate-800">
-                           Inside, the classroom was colorful and new. Vinny sat at his small desk and looked around shyly.
-                        </p>
-                     </div>
+
+                     <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-20 h-1 bg-slate-800 rounded-full z-20 opacity-30"></div>
                   </div>
-                  <div className="absolute -bottom-8 md:-bottom-12 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-xs md:max-w-md bg-white p-2 md:p-3 rounded-full shadow-2xl border border-slate-100 flex items-center justify-center gap-2 z-30 transform hover:scale-105 transition-transform">
-                     <button
-                        onClick={onStartCreating}
-                        className="flex-grow bg-orange-500 hover:bg-orange-600 text-white font-black text-sm md:text-lg py-3 md:py-4 px-6 md:px-8 rounded-full flex items-center justify-center gap-2 transition-all shadow-md"
-                     >
-                        <StarIcon className="w-5 h-5 md:w-6 md:h-6 fill-current" />
-                        Color Now
-                     </button>
+
+                  {/* Testimonial Badge (Floats on Desktop, Centered on Mobile) */}
+                  <div className="hidden md:flex absolute -bottom-6 -left-12 bg-white border border-slate-100 p-4 rounded-2xl shadow-xl max-w-[240px] gap-3 animate-bounce-slow">
+                     <span className="text-2xl mt-1">💛</span>
+                     <p className="text-[11px] font-bold text-slate-600 italic leading-snug">
+                        "The only book she refuses to donate." <br />
+                        <span className="text-indigo-600 uppercase tracking-widest text-[9px] not-italic mt-1 block">— Happy Parent</span>
+                     </p>
                   </div>
                </div>
             </div>
          </section>
 
-         <section className="py-24 px-6 bg-[#2D3342] text-white relative overflow-hidden">
-            <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10">
-               <div className="order-2 lg:order-1 animate-fade-in-up">
-                  <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-1.5 rounded-full text-sm font-bold text-yellow-300 uppercase tracking-widest mb-6 border border-white/10">
-                     <SparklesIcon className="w-4 h-4" /> New Feature
+         {/* Secondary Preview Section (The "Result") */}
+         <section className="py-24 px-6 bg-slate-50 relative overflow-hidden">
+            <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-20 items-center">
+               <div className="relative rounded-[2rem] overflow-hidden shadow-2xl border border-slate-200 bg-white aspect-[3/4] flex flex-col transform lg:-rotate-1">
+                  <div className="pt-8 px-8 text-center bg-white z-10">
+                     <h2 className="text-3xl md:text-4xl font-['Comic_Neue'] font-bold text-white drop-shadow-[0_2px_0_rgba(0,0,0,1)] [-webkit-text-stroke:1.5px_black] tracking-wide mb-2">
+                        Vinny's Big Adventure
+                     </h2>
                   </div>
-                  <h2 className="text-4xl md:text-5xl lg:text-6xl font-black font-['Nunito'] leading-tight mb-6">
-                     Meaningful Screentime.
-                  </h2>
-                  <h3 className="text-2xl md:text-3xl font-bold text-slate-300 mb-8">
-                     No crayons? No problem.
-                  </h3>
-                  <p className="text-lg text-slate-300 leading-relaxed mb-10 max-w-xl">
-                     Forgot the art supplies? You can color right here in our <strong className="text-white">Magical Studio</strong>.
-                  </p>
+                  <div className="flex-grow px-4 pb-4 relative flex items-center justify-center bg-white">
+                     <img
+                        src="/hero-drawing.jpg"
+                        alt="Final Product Preview"
+                        className="w-full h-full object-contain"
+                     />
+                  </div>
+                  <div className="px-8 pb-12 pt-2 text-center bg-white z-10">
+                     <p className="font-['Comic_Neue'] text-lg font-bold leading-relaxed text-slate-700">
+                        Inside, the classroom was colorful and new. Vinny was the hero of his own story!
+                     </p>
+                  </div>
                </div>
 
-               <div className="order-1 lg:order-2 flex justify-center perspective-[1000px] animate-fade-in-up">
-                  <div className="relative w-full max-w-[500px] aspect-[3/4] bg-black rounded-[2rem] p-3 shadow-2xl border-[1px] border-slate-700 transform hover:scale-105 transition-transform duration-700 ring-4 ring-slate-800 ring-opacity-50">
-                     <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rounded-full z-20 border border-slate-700"></div>
-
-                     {/* Interactive Tablet Demo Component */}
-                     <InteractiveTabletDemo onCTA={onStartCreating} />
-
-                     <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-20 h-1 bg-slate-800 rounded-full z-20"></div>
-                  </div>
+               <div className="space-y-8 text-center lg:text-left">
+                  <h2 className="text-4xl md:text-5xl lg:text-6xl font-black font-['Nunito'] text-slate-900 leading-tight">
+                     From Screen <br /> <span className="text-indigo-600">to Hardcover.</span>
+                  </h2>
+                  <p className="text-lg md:text-xl text-slate-600 max-w-xl font-medium mx-auto lg:mx-0">
+                     Every generation creates a high-resolution coloring book file you can print at home, or have shipped as a premium hardcover keepsake.
+                  </p>
+                  <button onClick={onStartCreating} className="bg-slate-900 text-white px-10 py-5 rounded-full font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-xl">
+                     Explore the Library
+                  </button>
                </div>
             </div>
          </section>
