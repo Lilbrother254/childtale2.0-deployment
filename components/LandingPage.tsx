@@ -328,7 +328,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
                         </div>
                         <button
                             onClick={() => setShowAuthModal(false)}
-                            className="absolute top-6 right-6 p-3 text-slate-400 hover:text-slate-900 transition-colors rounded-full bg-slate-50 md:bg-transparent z-[210]"
+                            className="absolute top-4 right-4 p-3.5 text-slate-500 hover:text-slate-900 transition-colors rounded-full bg-slate-100 hover:bg-slate-200 z-[210] shadow-sm md:shadow-none"
                             aria-label="Close authentication modal"
                         >
                             <XIcon className="w-6 h-6" />

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { SparklesIcon, MagicIcon, FillBucketIcon, BrushIcon, UndoIcon, RedoIcon } from './Icons';
+import { SparklesIcon, MagicIcon, FillBucketIcon, BrushIcon, UndoIcon, RedoIcon, XIcon } from './Icons';
 
 export const InteractiveTabletDemo: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -8,6 +8,7 @@ export const InteractiveTabletDemo: React.FC = () => {
     const [color, setColor] = useState('#ef4444');
     const [tool, setTool] = useState<'brush' | 'fill'>('fill');
     const [hasStarted, setHasStarted] = useState(false);
+    const [showCTA, setShowCTA] = useState(true);
 
     // History State
     const [history, setHistory] = useState<ImageData[]>([]);
@@ -133,7 +134,7 @@ export const InteractiveTabletDemo: React.FC = () => {
             const dg = Math.abs(data[pos + 1] - startG);
             const db = Math.abs(data[pos + 2] - startB);
 
-            if (dr + dg + db < 65) { // Increased tolerance for smoother filling on mobile/tablets
+            if (dr + dg + db < 75) { // Further increased tolerance to eliminate white lines near aliased black borders
                 data[pos] = r;
                 data[pos + 1] = g;
                 data[pos + 2] = b;
@@ -282,9 +283,15 @@ export const InteractiveTabletDemo: React.FC = () => {
                 </div>
             </div>
 
-            {strokeCount > 50 && (
+            {strokeCount > 50 && showCTA && (
                 <div className="absolute top-4 left-4 right-4 animate-fade-in-up z-30">
-                    <div className="bg-slate-900/95 backdrop-blur-md text-white p-5 rounded-[1.5rem] shadow-2xl flex flex-col gap-4 items-center text-center border border-white/10">
+                    <div className="bg-slate-900/95 backdrop-blur-md text-white p-5 rounded-[1.5rem] shadow-2xl flex flex-col gap-4 items-center text-center border border-white/10 relative">
+                        <button
+                            onClick={() => setShowCTA(false)}
+                            className="absolute top-3 right-3 p-1.5 text-white/40 hover:text-white transition-colors"
+                        >
+                            <XIcon className="w-4 h-4" />
+                        </button>
                         <div>
                             <p className="font-black text-[10px] uppercase tracking-[0.2em] text-[#FF721F] mb-1">Incredible talent!</p>
                             <p className="font-black text-sm leading-tight uppercase tracking-tight">This is just 5 colors...</p>
