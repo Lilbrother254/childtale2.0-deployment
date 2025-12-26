@@ -204,14 +204,6 @@ export const FAQPage: React.FC<FAQPageProps> = ({ onBack }) => {
         <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white pt-24 pb-24 px-4 md:px-6 font-['Nunito']">
             <div className="max-w-4xl mx-auto">
                 {/* Header */}
-                <button
-                    onClick={onBack}
-                    className="mb-8 flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors font-bold"
-                >
-                    <ArrowLeftIcon className="w-5 h-5" />
-                    Back
-                </button>
-
                 <div className="text-center mb-16">
                     <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-widest mb-6">
                         Frequently Asked Questions
