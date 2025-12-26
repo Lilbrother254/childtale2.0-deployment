@@ -102,7 +102,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({
 
           <button
             onClick={() => handleAction('sample')}
-            className="w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 active:scale-95"
+            className="w-full py-4 rounded-2xl font-black text-sm tracking-wide transition-all border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 active:scale-95 flex items-center justify-center"
           >
             Create Your Book
           </button>
@@ -145,7 +145,7 @@ export const PricingPage: React.FC<PricingPageProps> = ({
 
           <button
             onClick={() => handleAction('digital')}
-            className="w-full py-4 bg-white text-[#5851FF] rounded-2xl font-black text-sm tracking-wide transition-all hover:bg-indigo-50 shadow-xl active:scale-95"
+            className="w-full py-4 bg-white text-[#5851FF] rounded-2xl font-black text-sm tracking-wide transition-all hover:bg-indigo-50 shadow-xl active:scale-95 flex items-center justify-center"
           >
             Create Your Book
           </button>
@@ -187,17 +187,17 @@ export const PricingPage: React.FC<PricingPageProps> = ({
 
           <button
             onClick={() => handleAction('hardcover')}
-            className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black text-sm tracking-wide hover:bg-orange-600 transition-all shadow-lg hover:shadow-xl active:scale-95"
+            className="w-full py-4 bg-orange-500 text-white rounded-2xl font-black text-sm tracking-wide hover:bg-orange-600 transition-all shadow-lg hover:shadow-xl active:scale-95 flex items-center justify-center"
           >
             Order Hardcover
           </button>
-        </div>
+        </div >
 
-      </div>
+      </div >
 
       <div className="mt-16 text-center text-slate-400 font-bold text-sm">
         <p>Questions? Every story is backed by our "Magic Guarantee". If it's not perfect, we'll fix it.</p>
       </div>
-    </div>
+    </div >
   );
 };

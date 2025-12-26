@@ -17,9 +17,17 @@ interface AccountDropdownProps {
 export const AccountDropdown: React.FC<AccountDropdownProps> = ({ user, onLogout, onDeleteAccount, onLibrary, onCreate, onStudio, onClose }) => {
   return (
     <div className="absolute right-0 top-12 w-64 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-pop-in origin-top-right z-50">
-      <div className="p-5 border-b border-white/5">
-        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Signed in as</p>
-        <p className="text-white font-bold text-xs truncate opacity-80">{user.email}</p>
+      <div className="p-5 border-b border-white/5 flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-1">Signed in as</p>
+          <p className="text-white font-bold text-xs truncate opacity-80">{user.email}</p>
+        </div>
+        <button
+          onClick={onClose}
+          className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-white/40 hover:text-white"
+        >
+          <XIcon className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Primary Utility Menu */}

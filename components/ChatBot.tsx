@@ -130,7 +130,7 @@ TONE:
 
             {/* Chat Interface */}
             {isOpen && (
-                <div className="fixed bottom-6 right-6 w-full max-w-md h-[600px] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-slate-200 animate-fade-in mx-4 sm:mx-0">
+                <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-[400px] h-[600px] max-h-[80vh] bg-white rounded-2xl shadow-2xl flex flex-col z-50 border border-slate-200 animate-fade-in">
                     {/* Header */}
                     <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-4 rounded-t-2xl flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -144,9 +144,9 @@ TONE:
                         </div>
                         <button
                             onClick={() => setIsOpen(false)}
-                            className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                            className="p-2 -mr-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
                         >
-                            <XIcon className="w-5 h-5 text-white" />
+                            <XIcon className="w-5 h-5" />
                         </button>
                     </div>
 
@@ -230,7 +230,7 @@ TONE:
                             Need more help? <a href="mailto:childtale4@gmail.com" className="hover:text-indigo-600">Email Support</a>
                         </p>
                     </div>
-                </div>
+                </div >
             )}
         </>
     );

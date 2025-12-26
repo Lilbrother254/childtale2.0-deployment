@@ -133,7 +133,7 @@ export const InteractiveTabletDemo: React.FC = () => {
             const dg = Math.abs(data[pos + 1] - startG);
             const db = Math.abs(data[pos + 2] - startB);
 
-            if (dr + dg + db < 40) { // Tolerance for JPEG artifacts
+            if (dr + dg + db < 65) { // Increased tolerance for smoother filling on mobile/tablets
                 data[pos] = r;
                 data[pos + 1] = g;
                 data[pos + 2] = b;
@@ -166,6 +166,7 @@ export const InteractiveTabletDemo: React.FC = () => {
     };
 
     const onStart = (e: React.MouseEvent | React.TouchEvent) => {
+        if ('touches' in e) e.preventDefault(); // Prevent scrolling on touch
         setHasStarted(true);
         const { x, y } = getPos(e);
 
@@ -188,6 +189,7 @@ export const InteractiveTabletDemo: React.FC = () => {
     };
 
     const onMove = (e: React.MouseEvent | React.TouchEvent) => {
+        if ('touches' in e) e.preventDefault(); // Prevent scrolling on touch
         if (!isDrawing || tool !== 'brush') return;
         const { x, y } = getPos(e);
         const ctx = canvasRef.current?.getContext('2d');
