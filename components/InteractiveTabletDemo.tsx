@@ -53,7 +53,7 @@ export const InteractiveTabletDemo: React.FC = () => {
         if (!ctx) return;
 
         const img = new Image();
-        img.src = '/dragon-coloring.png';
+        img.src = '/hero-child.png';
         img.onload = () => {
             const container = canvas.parentElement;
             if (container) {
