@@ -73,7 +73,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
                         </p>
                      </div>
                   </div>
-                  <div className="absolute -bottom-8 md:-bottom-12 left-1/2 -translate-x-1/2 w-full max-w-xs md:max-w-md bg-white p-2 md:p-3 rounded-full shadow-2xl border border-slate-100 flex items-center justify-center gap-2 pr-6 md:pr-8 z-30 transform hover:scale-105 transition-transform">
+                  <div className="absolute -bottom-8 md:-bottom-12 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-xs md:max-w-md bg-white p-2 md:p-3 rounded-full shadow-2xl border border-slate-100 flex items-center justify-center gap-2 z-30 transform hover:scale-105 transition-transform">
                      <button
                         onClick={onStartCreating}
                         className="flex-grow bg-orange-500 hover:bg-orange-600 text-white font-black text-sm md:text-lg py-3 md:py-4 px-6 md:px-8 rounded-full flex items-center justify-center gap-2 transition-all shadow-md"
@@ -124,7 +124,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
                </h2>
                <button
                   onClick={onStartCreating}
-                  className="bg-white text-slate-900 text-xl font-bold py-5 px-12 rounded-full shadow-2xl hover:scale-105 transition-transform flex items-center gap-3 mx-auto"
+                  className="bg-white text-slate-900 text-lg md:text-xl font-bold py-4 md:py-5 px-8 md:px-12 rounded-full shadow-2xl hover:scale-105 transition-transform flex items-center justify-center gap-3 mx-auto w-fit"
                >
                   <SparklesIcon className="w-6 h-6 text-yellow-500" />
                   Create Free 5-Page Story
