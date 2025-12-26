@@ -20,8 +20,8 @@ export const ChatBot: React.FC = () => {
 
 POLICIES (CRITICAL):
 - 1-Free Regeneration Rule: Every paid book (Digital or Hardcover) includes exactly ONE free regeneration if you're not happy with the first magic weave.
-- The Safety Net: If a generation fails or the magic sparkles lose their way, we offer a full refund or a manual fix within 24 hours. Just email childtale4@gmail.com!
-- 30-Day Money-Back Guarantee: If the magic isn't real for you, we'll refund your purchase, no questions asked.
+- The Safety Net: If a generation fails or the magic sparkles lose their way, we offer a manual fix or a credit refund for a new try. Just email childtale4@gmail.com!
+- Refund Policy: Due to the personalized nature of our magic, all sales are final. Our "Safety Net" and free regeneration ensure every parent and child loves their story!
 
 ABOUT CHILDTALE:
 - Personalized children's story generator powered by ChildTale's Magic.

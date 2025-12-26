@@ -57,7 +57,8 @@ export const InteractiveTabletDemo: React.FC<TabletDemoProps> = ({ onCTA }) => {
         if (!ctx) return;
 
         const img = new Image();
-        img.src = '/hero-child.png';
+        const DEMO_IMAGE = '/hero-girl.png';
+        img.src = DEMO_IMAGE;
         img.onload = () => {
             const container = canvas.parentElement;
             if (container) {

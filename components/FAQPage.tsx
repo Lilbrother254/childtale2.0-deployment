@@ -27,7 +27,7 @@ export const FAQPage: React.FC<FAQPageProps> = ({ onBack }) => {
             faqs: [
                 {
                     question: "What is your refund policy?",
-                    answer: "We offer a 100% satisfaction guarantee. If your digital book isn't what you expected, contact us at childtale4@gmail.com within 30 days. Every purchase also includes 1 free magic regeneration to help you get it just right!"
+                    answer: "Due to the highly personalized nature of ChildTale books, all sales of digital and physical products are final. However, your satisfaction is our priority! Every purchase includes **1 free magic regeneration credit** so you can perfect your story if the first weave isn't exactly what you dreamed of. If there is a manufacturing defect with a hardcover book, please contact us at childtale4@gmail.com."
                 },
                 {
                     question: "Can I get a free regeneration if I don't like my story?",
