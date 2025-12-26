@@ -113,10 +113,10 @@ export const InteractiveTabletDemo: React.FC = () => {
         const startG = data[startPos + 1];
         const startB = data[startPos + 2];
 
-        // NEW: Protection for lines. If we click a very dark pixel (near black), do nothing.
-        // This prevents the user from accidentally coloring the thick outlines.
-        if (startR + startG + startB < 150) {
-            console.log("🛡️ Clicked a line - protecting outlines");
+        // NEW: Protection for lines. Increased threshold (300) to catch anti-aliased edges.
+        // If we click anything dark or greyish-dark, reject the fill.
+        if (startR + startG + startB < 300) {
+            console.log("🛡️ Clicked a line or edge - protecting outlines");
             return;
         }
 
@@ -141,7 +141,14 @@ export const InteractiveTabletDemo: React.FC = () => {
             const dg = Math.abs(data[pos + 1] - startG);
             const db = Math.abs(data[pos + 2] - startB);
 
-            if (dr + dg + db < 65) { // Reset to normal tolerance for clean line art
+            if (dr + dg + db < 65) {
+                // CRITICAL PROTECTION: Never overwrite a pixel that is already dark (near black)
+                // This prevents the fill from "eating into" the outlines even if there's a small gap
+                const currentSum = data[pos] + data[pos + 1] + data[pos + 2];
+                if (currentSum < 100) { // If the pixel we're about to color is near black, skip it
+                    continue;
+                }
+
                 data[pos] = r;
                 data[pos + 1] = g;
                 data[pos + 2] = b;

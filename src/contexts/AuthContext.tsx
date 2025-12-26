@@ -42,22 +42,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // 1. Initial Session Check (Standard Supabase)
         supabase.auth.getSession().then(async ({ data: { session } }) => {
-            if (isMounted && session?.user) {
-                // Instantly set a "Shell User" so the UI transitions
-                setUser({
-                    id: session.user.id,
-                    email: session.user.email || '',
-                    samplesUsed: 0,
-                    storeCreditBalance: 0,
-                    isAdmin: false,
-                    lastSampleAt: undefined
-                });
-                // CRITICAL: Resolve loading screen immediately once we have a user
-                setIsLoading(false);
-                // Then hydrate the real profile in background
-                refreshProfile();
-            } else {
-                setIsLoading(false);
+            if (isMounted) {
+                if (session?.user) {
+                    setUser({
+                        id: session.user.id,
+                        email: session.user.email || '',
+                        samplesUsed: 0,
+                        storeCreditBalance: 0,
+                        isAdmin: false,
+                        lastSampleAt: undefined
+                    });
+                    setIsLoading(false);
+                    refreshProfile();
+                } else {
+                    setUser(null);
+                    setIsLoading(false);
+                }
             }
         });
 
@@ -119,13 +119,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, []);
 
     const logout = async () => {
-        // Optimistic UI: Update state immediately before network call
+        console.log("🚪 Logging out...");
+        // Optimistic UI
         setUser(null);
         setIsLoading(false);
         try {
             await supabase.auth.signOut();
+            // Force clear any residual supabase keys in localStorage
+            Object.keys(localStorage).forEach(key => {
+                if (key.includes('supabase.auth.token')) {
+                    localStorage.removeItem(key);
+                }
+            });
+            window.location.href = '/'; // Force a clean slate
         } catch (err) {
             console.error("Logout error:", err);
+            window.location.reload();
         }
     };
 
