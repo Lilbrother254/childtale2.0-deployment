@@ -8,7 +8,7 @@ Write-Host "Found $($pdfs.Count) PDFs to convert..." -ForegroundColor Green
 
 foreach ($pdf in $pdfs) {
     $outputName = $pdf.BaseName + "-preview.jpg"
-    $outputPath = Join-Path $samplesPath $outputName
+
     
     Write-Host "Converting: $($pdf.Name)..." -ForegroundColor Yellow
     
