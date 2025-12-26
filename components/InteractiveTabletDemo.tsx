@@ -301,8 +301,9 @@ export const InteractiveTabletDemo: React.FC = () => {
                 <div className="absolute top-4 left-4 right-4 animate-fade-in-up z-30">
                     <div className="bg-slate-900/95 backdrop-blur-md text-white p-5 rounded-[1.5rem] shadow-2xl flex flex-col gap-4 items-center text-center border border-white/10 relative">
                         <button
-                            onClick={() => setShowCTA(false)}
-                            className="absolute top-3 right-3 p-1.5 text-white/40 hover:text-white transition-colors"
+                            onClick={(e) => { e.stopPropagation(); setShowCTA(false); }}
+                            className="absolute -top-3 -right-3 p-3 bg-slate-800 text-white rounded-full shadow-xl border border-white/20 hover:bg-slate-700 transition-all active:scale-95 z-40"
+                            aria-label="Close call to action"
                         >
                             <XIcon className="w-4 h-4" />
                         </button>
