@@ -59,14 +59,14 @@ export const AccountDropdown: React.FC<AccountDropdownProps> = ({ user, onLogout
         <div className="mx-2 mt-4 p-4 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
           <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1 text-center">Refer & Reward</p>
           <p className="text-[9px] text-white/50 font-bold mb-3 text-center leading-tight">
-            Give 10%, Get 10% off your next purchase after their first order.<br />
-            <span className="text-indigo-400 opacity-60 italic">(Refer 10 and get a free purchase!)</span>
+            Refer & Save! Friends get 10% off, and you earn 10% credit for every book they buy.<br />
+            <span className="text-indigo-400 opacity-60 italic">(Refer 10 for a free book!)</span>
           </p>
           <button
             onClick={() => {
               const link = `${window.location.origin}?ref=${user.id}`;
               navigator.clipboard.writeText(link);
-              alert("Invitation link copied! Share it to earn a 10% discount on your next purchase once they complete their first order.");
+              alert("Invitation link copied! Share it to start earning credits towards free books.");
             }}
             className="w-full py-2 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-500 transition-all shadow-lg active:scale-95"
           >

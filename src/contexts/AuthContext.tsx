@@ -124,17 +124,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
         setIsLoading(false);
         try {
-            await supabase.auth.signOut();
-            // Force clear any residual supabase keys in localStorage
-            Object.keys(localStorage).forEach(key => {
-                if (key.includes('supabase.auth.token')) {
-                    localStorage.removeItem(key);
-                }
+            // 1. Sign out from all sessions globally
+            await supabase.auth.signOut({ scope: 'global' });
+
+            // 2. Force clear any residual supabase keys in ALL storage
+            [localStorage, sessionStorage].forEach(storage => {
+                Object.keys(storage).forEach(key => {
+                    if (key.includes('supabase.auth.token') || key.includes('sb-')) {
+                        storage.removeItem(key);
+                    }
+                });
             });
-            window.location.href = '/'; // Force a clean slate
+
+            // 3. Force a full location replace to clear session history
+            window.location.replace('/');
         } catch (err) {
             console.error("Logout error:", err);
-            window.location.reload();
+            window.location.replace('/');
         }
     };
 
