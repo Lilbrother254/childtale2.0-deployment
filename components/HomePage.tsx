@@ -4,6 +4,7 @@ import { SparklesIcon, StarIcon } from './Icons';
 import { ArtPencil, ArtCrayon } from './Branding';
 import { generateColoringPage } from '../services/geminiService';
 import { InteractiveTabletDemo } from './InteractiveTabletDemo';
+import { SamplesGallery } from './SamplesGallery';
 
 interface HomePageProps {
    onStartCreating: () => void;
@@ -77,6 +78,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
                </div>
             </div>
          </section>
+
+         {/* Art Samples Gallery */}
+         <SamplesGallery />
 
          <section className="py-24 px-6 bg-[#2D3342] text-white relative overflow-hidden">
             <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-20 items-center relative z-10">
