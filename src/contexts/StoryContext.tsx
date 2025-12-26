@@ -58,7 +58,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setIsInitialLoading(false);
             setHasMore(false);
         }
-    }, [user]);
+    }, [user?.id]);
 
     const loadMore = async () => {
         if (!user || !hasMore || isInitialLoading) return;

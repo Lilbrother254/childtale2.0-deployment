@@ -112,22 +112,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
         });
 
-        // 3. Tab Visibility Listener (Restore session on return)
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                console.log("👁️ Tab focused - refreshing session...");
-                // Force an immediate loading state clear in case it was stuck
-                setIsLoading(false);
-                refreshProfile();
-            }
-        };
-
-        document.addEventListener('visibilitychange', handleVisibilityChange);
-
         return () => {
             isMounted = false;
             subscription.unsubscribe();
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, []);
 

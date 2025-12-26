@@ -113,6 +113,13 @@ export const InteractiveTabletDemo: React.FC = () => {
         const startG = data[startPos + 1];
         const startB = data[startPos + 2];
 
+        // NEW: Protection for lines. If we click a very dark pixel (near black), do nothing.
+        // This prevents the user from accidentally coloring the thick outlines.
+        if (startR + startG + startB < 150) {
+            console.log("🛡️ Clicked a line - protecting outlines");
+            return;
+        }
+
         const r = parseInt(fillColor.slice(1, 3), 16);
         const g = parseInt(fillColor.slice(3, 5), 16);
         const b = parseInt(fillColor.slice(5, 7), 16);
