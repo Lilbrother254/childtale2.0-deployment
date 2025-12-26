@@ -53,7 +53,7 @@ export const InteractiveTabletDemo: React.FC = () => {
         if (!ctx) return;
 
         const img = new Image();
-        img.src = '/collab-demo.jpg';
+        img.src = '/dragon-coloring.png';
         img.onload = () => {
             const container = canvas.parentElement;
             if (container) {
@@ -134,7 +134,7 @@ export const InteractiveTabletDemo: React.FC = () => {
             const dg = Math.abs(data[pos + 1] - startG);
             const db = Math.abs(data[pos + 2] - startB);
 
-            if (dr + dg + db < 110) { // Highly aggressive tolerance to bridge gaps in textured illustrations like the chair
+            if (dr + dg + db < 65) { // Reset to normal tolerance for clean line art
                 data[pos] = r;
                 data[pos + 1] = g;
                 data[pos + 2] = b;

@@ -22,16 +22,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
             try {
+                // If we already have a user, don't set loading to true again
                 const profile = await supabaseService.getProfile(session.user.id);
                 if (profile) {
                     setUser(profile);
-                } else {
-                    console.warn("⚠️ Profile not found during refresh, keeping shell user");
                 }
             } catch (err) {
                 console.error("❌ Profile refresh error:", err);
             } finally {
-                // CRITICAL: Always set loading to false after refresh
                 setIsLoading(false);
             }
         } else {
@@ -54,8 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     isAdmin: false,
                     lastSampleAt: undefined
                 });
-                // Then hydrate the real profile (refreshProfile handles setIsLoading)
-                await refreshProfile();
+                // CRITICAL: Resolve loading screen immediately once we have a user
+                setIsLoading(false);
+                // Then hydrate the real profile in background
+                refreshProfile();
             } else {
                 setIsLoading(false);
             }
