@@ -9,9 +9,14 @@ interface Message {
     timestamp: Date;
 }
 
+import { useAuth } from '../src/contexts/AuthContext';
+
 export const ChatBot: React.FC = () => {
+    const { user } = useAuth();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
+
+    if (!user) return null;
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);

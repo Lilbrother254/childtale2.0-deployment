@@ -240,15 +240,40 @@ export const AppRouter: React.FC = () => {
                         {appState === AppState.MAGIC_STUDIO && <MagicStudioPage stories={stories} isLoading={isInitialLoading} initialBookId={activeStory?.id || null} onOpenColoring={handleOpenColoring} onDownloadBook={(s) => generateHomePrintPDF(s, { childName: s.childName } as any)} onCreateNew={() => setAppState(AppState.INPUT)} onBack={() => setAppState(AppState.INPUT)} />}
 
                         {/* Generation View */}
+                        {/* Generation View - Show Preview if we have pages, otherwise show spinner */}
                         {(appState === AppState.GENERATING_STORY || isGenerating) && (
-                            <div className="max-w-6xl mx-auto py-10 space-y-12 animate-fade-in text-center">
-                                <div className="relative w-32 h-32 mx-auto">
-                                    <div className="absolute inset-0 border-4 border-indigo-600 rounded-[2.5rem] border-t-transparent animate-spin"></div>
-                                    <div className="absolute inset-0 flex items-center justify-center"><SparklesIcon className="w-12 h-12 text-indigo-600 animate-bounce" /></div>
+                            activeStory?.pages && activeStory.pages.length > 0 ? (
+                                <div className="relative">
+                                    {/* Overlay for "Still Weaving" */}
+                                    <div className="fixed top-24 right-6 z-40 bg-white/90 backdrop-blur border border-indigo-100 p-4 rounded-xl shadow-xl flex items-center gap-3 animate-fade-in">
+                                        <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                                        <div>
+                                            <p className="font-bold text-sm text-indigo-900">{generationProgress?.currentStep || "Weaving Story..."}</p>
+                                            <p className="text-xs text-indigo-500 font-bold">{generationProgress?.progress}% Complete</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Show the Studio (Live Preview) */}
+                                    <MagicStudioPage
+                                        stories={stories}
+                                        isLoading={false}
+                                        initialBookId={activeStory?.id || null}
+                                        onOpenColoring={handleOpenColoring}
+                                        onDownloadBook={(s) => generateHomePrintPDF(s, { childName: s.childName } as any)}
+                                        onCreateNew={() => setAppState(AppState.INPUT)}
+                                        onBack={() => setAppState(AppState.INPUT)}
+                                    />
                                 </div>
-                                <h2 className="text-4xl font-black">{generationProgress?.currentStep || "Making Magic..."}</h2>
-                                <p className="text-slate-400 font-bold">{generationProgress?.progress}% Complete</p>
-                            </div>
+                            ) : (
+                                <div className="max-w-6xl mx-auto py-10 space-y-12 animate-fade-in text-center">
+                                    <div className="relative w-32 h-32 mx-auto">
+                                        <div className="absolute inset-0 border-4 border-indigo-600 rounded-[2.5rem] border-t-transparent animate-spin"></div>
+                                        <div className="absolute inset-0 flex items-center justify-center"><SparklesIcon className="w-12 h-12 text-indigo-600 animate-bounce" /></div>
+                                    </div>
+                                    <h2 className="text-4xl font-black">{generationProgress?.currentStep || "Making Magic..."}</h2>
+                                    <p className="text-slate-400 font-bold">{generationProgress?.progress}% Complete</p>
+                                </div>
+                            )
                         )}
 
                         {appState === AppState.PREVIEW && <MagicStudioPage stories={stories} isLoading={isInitialLoading} initialBookId={activeStory?.id || null} onOpenColoring={handleOpenColoring} onDownloadBook={(s) => generateHomePrintPDF(s, { childName: s.childName } as any)} onCreateNew={() => setAppState(AppState.INPUT)} onBack={() => setAppState(AppState.INPUT)} />}
