@@ -112,21 +112,41 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 pageCount: story.pageCount
             };
 
-            const structure = await geminiService.generateStoryStructure(input);
+            const structure = await geminiService.generateStoryStructure(
+                input.childName,
+                input.childAge,
+                input.childGender,
+                input.category,
+                input.prompt,
+                input.characterDescription,
+                story.pageCount
+            );
             await supabaseService.updateBookStatus(story.id, 'generating');
 
-            const charRefBase64 = await geminiService.generateCharacterReference(input.childName, input.childAge, input.characterDescription, structure.characterDescription);
+            // NEW: Generate Cast Bible first for character consistency
+            const charRefBase64 = await geminiService.generateCharacterReference(
+                input.childName,
+                input.childAge,
+                input.characterDescription,
+                structure.characterDescription
+            );
 
+            let characterReferenceUrl = '';
             if (charRefBase64) {
-                const referenceUrl = await supabaseService.uploadImage(user.id, story.id, 'master_reference', charRefBase64);
-                await supabaseService.updateBookReference(story.id, referenceUrl, structure.characterDescription);
+                // Determine file extension from base64 string
+                // Usually "data:image/png;base64,..."
+                // But for safety within uploadImage, we often just pass the base64 or a blob
+                // Uploading "Cast Bible" to storage...
+                characterReferenceUrl = await supabaseService.uploadImage(user.id, story.id, 'master_reference', charRefBase64);
+                await supabaseService.updateBookReference(story.id, characterReferenceUrl, structure.characterDescription);
             }
 
             for (let i = 0; i < structure.pages.length; i++) {
+                // Pass the Cast Bible Reference to the page generator
                 const base64 = await geminiService.generateColoringPage(
                     structure.pages[i].imagePrompt,
                     structure.characterDescription,
-                    charRefBase64
+                    charRefBase64 || null
                 );
                 const imageUrl = await supabaseService.uploadImage(user.id, story.id, i + 1, base64);
                 const newPage: StoryPage = {
@@ -201,7 +221,15 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const bookId = existingBookId || await supabaseService.createBook(user.id, input, `${input.childName}'s Adventure`);
 
             setGenerationProgress({ currentStep: 'Weaving the Tale', progress: 15 });
-            const structure = await geminiService.generateStoryStructure(input);
+            const structure = await geminiService.generateStoryStructure(
+                input.childName,
+                input.childAge,
+                input.childGender,
+                input.category,
+                input.prompt,
+                input.characterDescription,
+                input.pageCount
+            );
 
             const initialStory: Story = {
                 ...structure,
@@ -213,13 +241,24 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setStories(prev => [initialStory, ...prev]);
 
             setGenerationProgress({ currentStep: 'Sketching the Master Reference', progress: 25 });
-            const charRefBase64 = await geminiService.generateCharacterReference(input.childName, input.childAge, input.characterDescription, structure.characterDescription);
+            const charRefBase64 = await geminiService.generateCharacterReference(
+                input.childName,
+                input.childAge,
+                input.characterDescription,
+                structure.characterDescription
+            );
 
             let characterReferenceUrl = '';
             if (charRefBase64) {
-                characterReferenceUrl = await supabaseService.uploadImage(user.id, bookId, 'master_reference', charRefBase64);
-                await supabaseService.updateBookReference(bookId, characterReferenceUrl, structure.characterDescription);
-                setActiveStory(prev => prev ? { ...prev, characterDescription: structure.characterDescription } : null);
+                try {
+                    characterReferenceUrl = await supabaseService.uploadImage(user.id, bookId, 'master_reference', charRefBase64);
+                    await supabaseService.updateBookReference(bookId, characterReferenceUrl, structure.characterDescription);
+
+                    // Update local active story immediately with the description
+                    setActiveStory(prev => prev ? { ...prev, characterDescription: structure.characterDescription } : null);
+                } catch (e) {
+                    console.error("Failed to upload reference:", e);
+                }
             }
 
             for (let i = 0; i < structure.pages.length; i++) {
@@ -228,7 +267,12 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     progress: 30 + Math.floor(((i + 1) / structure.pages.length) * 65)
                 });
 
-                const base64 = await geminiService.generateColoringPage(structure.pages[i].imagePrompt, structure.characterDescription, charRefBase64);
+                // Pass the Cast Bible Reference to the page generator
+                const base64 = await geminiService.generateColoringPage(
+                    structure.pages[i].imagePrompt,
+                    structure.characterDescription,
+                    charRefBase64 || null
+                );
 
                 const imageUrl = await supabaseService.uploadImage(user.id, bookId, i + 1, base64);
                 const newPage: StoryPage = {

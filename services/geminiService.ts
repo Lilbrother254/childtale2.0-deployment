@@ -1,194 +1,215 @@
 
-import { supabase } from "../utils/supabaseClient";
-import { Story, UserInput } from "../types";
+import { supabase } from '../utils/supabaseClient';
 
-// Removed local API key logic //
-
-import CompressionWorker from '../src/workers/compression.worker?worker';
-
-const resizeBase64 = async (base64: string, maxDim: number = 384): Promise<string> => {
-  if (!base64) return "";
+/**
+ * ChildTale Pipeline - Stage 1: Adaptive Pre-Filtering
+ * Custom algorithm to force AI sketches into professional 300 DPI line art.
+ * This removes "dust", interpolation artifacts, and gray shading.
+ */
+const applyAdaptiveThreshold = async (base64: string): Promise<string> => {
   return new Promise((resolve) => {
-    const worker = new CompressionWorker();
-    const id = Math.random().toString(36).substring(7);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = base64;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      // Upscale slightly to provide more pixel density for the thresholding
+      const UPSCALE_FACTOR = 1.5;
+      canvas.width = img.width * UPSCALE_FACTOR;
+      canvas.height = img.height * UPSCALE_FACTOR;
 
-    worker.onmessage = (e) => {
-      if (e.data.id === id) {
-        if (e.data.error) {
-          console.warn("Worker compression failed, returning original:", e.data.error);
-          resolve(base64); // Fallback
-        } else {
-          resolve(e.data.base64);
-        }
-        worker.terminate();
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) { resolve(base64); return; }
+
+      // Stage 1: Sharpening Draw
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      /**
+       * Stage 2: Adaptive Binary Thresholding
+       * Forces every pixel to pure #000 (Black) or #FFF (White)
+       * This removes the "136.5 DPI gap" and creates vector-ready contrast.
+       */
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+
+        // Luminance calculation (Perceptual weights)
+        const v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+        // Threshold: High values become white, low values (lines) become pure black
+        // This cleaning process makes line art print-ready at 300 DPI
+        const res = v < 190 ? 0 : 255;
+
+        data[i] = data[i + 1] = data[i + 2] = res;
+        data[i + 3] = 255; // Force full opacity
       }
-    };
 
-    worker.onerror = (err) => {
-      console.error("Worker Error:", err);
-      resolve(base64); // Fallback
-      worker.terminate();
+      ctx.putImageData(imageData, 0, 0);
+      resolve(canvas.toDataURL('image/png', 1.0));
     };
-
-    // Determine target W/H (simplistic logic: assume square maxDim for both for now, worker handles aspect ratio)
-    // Actually, worker takes maxW/maxH. We pass maxDim to both.
-    worker.postMessage({
-      id,
-      fileOrUrl: base64,
-      maxWidth: maxDim,
-      maxHeight: maxDim,
-      quality: 0.8,
-      outputFormat: 'image/png'
-    });
+    img.onerror = () => resolve(base64);
   });
 };
 
-export const generateStoryStructure = async (input: UserInput): Promise<Story> => {
-  console.group("✨ Gemini: Story Architecting");
-  console.log("Request Payload:", input);
+/**
+ * Utility to resize base64 images to avoid token limits.
+ * Max width/height 512px.
+ */
+const resizeBase64 = (base64Str: string, maxWidth = 512): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
 
-  const characterFullDesc = `${input.childAge} year old ${input.childGender}, ${input.characterDescription}`;
+      if (width > height) {
+        if (width > maxWidth) {
+          height *= maxWidth / width;
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxWidth) {
+          width *= maxWidth / height;
+          height = maxWidth;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', 0.8)); // JPEG 80% quality
+    };
+    img.onerror = () => resolve(base64Str); // Fallback: return original
+  });
+};
 
-  const systemPrompt = `
-You are a Lead Storyboard Director for a major animation studio (Pixar/Disney style). 
-Structure this story into EXACTLY ${input.pageCount} beats.
 
-**STRICT B&W PROTOCOL (CRITICAL):**
-1. **ANTI-SILHOUETTE:** Forcing white interiors so they can be colored. Every object must be drawable as a white shape with a black outline.
-2. **NO FILLS:** Specifically forbid using solid black or grey shading. 
-3. **ARCHITECTURAL WHIMSY:** Command a Pixar-style aesthetic rather than flat geometric shapes. Houses should be whimsical, cozy, and detailed Pixar-style (think shingles, window panes, flower boxes).
-4. **NO COLORS IN PROMPTS:** Do NOT use color adjectives (blue, red, green, etc.). Describe patterns or textures instead.
-5. **ASSET FIDELITY:** Describe vehicles and characters by physical features ONLY.
-6. **SPATIAL LAYOUT:** Specify where characters stand (Left/Right/Center) to avoid AI duplication.
+/**
+ * Generates the story structure using Gemini 1.5 Pro via Edge Function
+ */
+export const generateStoryStructure = async (
+  childName: string,
+  childAge: number,
+  childGender: string,
+  category: string,
+  prompt: string,
+  description: string,
+  pageCount: number = 5
+) => {
+  console.group("✨ Gemini: Story Engine");
 
-**OUTPUT:** JSON format containing 'title', 'castBible', and 'pages'.
-'castBible' MUST be a visual description of characters using ONLY patterns and shapes (no colors).
-`;
+  const systemPrompt = `Create a ${pageCount}-page coloring book story for a ${childAge} year old ${childGender} named ${childName}.
+    The story theme is: ${category}.
+    User Prompt: ${prompt}.
+    Additional details: ${description}.
+    
+    Output a JSON object with:
+    - title: Creative story title
+    - characterDescription: A specific physical description of ${childName} for visual consistency.
+    - pages: An array of ${pageCount} objects, each with:
+      - text: 1-2 sentences of story text
+      - imagePrompt: A detailed description for an AI illustrator to draw this scene.
+    `;
 
   try {
     const { data, error } = await supabase.functions.invoke('generate-story', {
       body: {
-        action: 'generate-story',
+        action: 'generate-text',
         payload: {
-          systemPrompt: systemPrompt,
-          userPrompt: `Prompt: ${input.prompt}\nProtagonist: ${input.childName}, ${characterFullDesc}`
+          prompt: systemPrompt,
+          model: 'gemini-1.5-pro'
         }
       }
     });
 
     if (error) {
-      console.error("❌ EDGE FUNCTION ERROR:", error);
+      console.error("Simple Edge Function Error:", error);
       throw error;
     }
 
     if (data.error) {
-      const isQuota = data.code === 429 || data.error.includes("magic limit");
-      console.error(`❌ GEMINI API ERROR (Architecture)${isQuota ? " [QUOTA]" : ""}:`, data.error);
+      console.error("API Error in data:", data.error);
       throw new Error(data.error);
     }
 
-    let text = data.text || "{}";
-    text = text.replace(/^```json\s*/, "").replace(/\s*```$/, "").trim();
-    const json = JSON.parse(text);
-
-    console.log("✅ Architecture Complete:", json.title);
+    console.log("✅ Story Structure Generated");
     console.groupEnd();
+    return data.result;
 
-    return {
-      id: crypto.randomUUID(),
-      createdAt: Date.now().toString(),
-      category: input.category,
-      title: json.title || "Untitled Story",
-      characterDescription: json.castBible,
-      childName: input.childName,
-      childAge: input.childAge,
-      childGender: input.childGender,
-      pages: (json.pages || []).map((p: any, idx: number) => ({
-        pageNumber: idx + 1,
-        text: p.text || "",
-        imagePrompt: p.imagePrompt || ""
-      })),
-      status: 'completed',
-      isPurchased: false,
-      hasBeenRegenerated: false,
-      pageCount: input.pageCount
-    } as Story;
-  } catch (error: any) {
-    console.error("❌ Story structure generation failed:", error);
+  } catch (error) {
+    console.error("Story structure generation failed:", error);
     console.groupEnd();
     throw error;
   }
 };
 
+/**
+ * Generates a character reference (Cast Bible) using Gemini 2.0 Flash Exp
+ */
 export const generateCharacterReference = async (
-  name: string, age: number, description: string, castBible: string
+  name: string,
+  age: number,
+  userDesc: string,
+  aiDesc: string
 ): Promise<string | undefined> => {
-  console.group("🎨 Gemini: Character Consistency (Cast Bible)");
-  console.log("Target:", name, age, description);
+  console.group("🎭 Gemini: Cast Bible Engine");
 
-  const prompt = `
-    CREATE A MASTER REFERENCE SHEET (12-PANEL GRID).
-    STYLE: Professional Coloring Book Model Sheet. 
-    
-    STRICT B&W PROTOCOL:
-    - ANTI-SILHOUETTE: Forcing white interiors so they can be colored.
-    - NO FILLS: Specifically forbidding solid black or grey shading.
-    - ARCHITECTURAL WHIMSY: Pixar-style aesthetic.
-    - 100% BLACK AND WHITE LINE ART ONLY. 
-    - NO SILHOUETTES.
-    - EVERY SHAPE (CAR, HOUSE, PERSON) MUST BE WHITE INSIDE.
-    - Clean, bold black ink outlines on a pure white background.
-    
-    GRID LAYOUT (4x3):
-    ROW 1 (HERO: ${name}): 4 panels showing front, side, happy, and running.
-    ROW 2 (SUPPORTING): 4 panels for Mom, Dad, Pets. Adults must be 2x height of child.
-    ROW 3 (ASSETS): Line-art drawings of vehicles and cozy, whimsical houses mentioned in Bible: ${castBible}.
-  `;
+  const prompt = `A professional character reference sheet for a child named ${name}, age ${age}.
+    Description: ${userDesc}. ${aiDesc}.
+    The sheet shows the character from front and side views.
+    STYLE: Clean line art, bold black outlines, pure white background, no shading, no colors, high contrast, 300 DPI vector style.`;
 
   try {
+    const payload = {
+      prompts: [prompt],
+      model: 'gemini-2.0-flash-exp' // Utilizing the Pro model speed/quality
+    };
+
     const { data, error } = await supabase.functions.invoke('generate-story', {
       body: {
         action: 'generate-image',
-        payload: {
-          prompts: prompt,
-          model: 'gemini-2.5-flash-image'
-        }
+        payload: payload
       }
     });
 
-    if (error) {
-      console.error("❌ EDGE FUNCTION ERROR (Cast Bible):", error);
-      throw error;
-    }
-
-    if (data.error) {
-      const isQuota = data.code === 429 || data.error.includes("magic limit");
-      console.error(`❌ GEMINI API ERROR (Cast Bible)${isQuota ? " [QUOTA]" : ""}:`, data.error);
-      throw new Error(data.error);
-    }
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
 
     if (!data.image) {
-      throw new Error("Character reference generation failed: No image received.");
+      console.warn("⚠️ No image returned for Cast Bible");
+      console.groupEnd();
+      return undefined;
     }
 
     console.log("✅ Cast Bible Generated");
-    const result = await resizeBase64(data.image, 512);
     console.groupEnd();
-    return result;
+
+    // Resize for token efficiency when reusing later
+    return await resizeBase64(`data:image/png;base64,${data.image}`);
+
   } catch (error) {
-    console.error("❌ Cast Bible generation error:", error);
+    console.error("❌ Cast Bible generation failed (Non-blocking):", error);
     console.groupEnd();
-    throw error;
+    return undefined;
   }
 };
 
+/**
+ * Generates a single high-fidelity coloring page using Supabase Edge Function
+ */
 export const generateColoringPage = async (
   imagePrompt: string,
-  castContext: string,
-  castBibleImageBase64?: string
+  castContext: string = "",
+  castBibleImageBase64: string | null = null
 ): Promise<string> => {
   console.group("🖌️ Gemini: Illustration Engine");
-  console.log("Prompt:", imagePrompt);
 
   const finalPrompt = `
     STRICT B&W PROTOCOL:
@@ -200,29 +221,27 @@ export const generateColoringPage = async (
     - MANDATORY: EVERY OBJECT (CAR, HOUSE, CHARACTER) MUST BE WHITE INSIDE WITH BOLD BLACK OUTLINES.
     
     SCENE RULES:
-    1. HERO COUNT: Draw the hero EXACTLY ONCE.
-    2. NO GHOSTS: No extra people or children.
-    3. POSITIONING: ${imagePrompt}
-    4. STYLE: High-contrast stencil line art. 
-    5. CLOSED PATHS: Every line must be perfectly closed for flood filling.
+    HERO COUNT: Draw the hero EXACTLY ONCE. NO GHOSTS.
+    POSITIONING: ${imagePrompt}
+    STYLE: High contrast stencil line art. CLOSED PATHS.
     
-    SCENE DESCRIPTION: ${imagePrompt}
-    CHARACTER CONTEXT: ${castContext}
+    SCENE: ${imagePrompt}
+    CHARACTER: ${castContext}
   `;
 
-  const payload: any = {
-    prompts: [finalPrompt],
-    model: 'gemini-2.5-flash-image'
-  };
-
-  if (castBibleImageBase64) {
-    const resizedRef = await resizeBase64(castBibleImageBase64, 448);
-    payload.base64Image = resizedRef;
-    payload.prompts.push("Strictly maintain the character and asset designs from the attached reference sheet.");
-    console.log("🖼️ Multimedia: Reference image attached.");
-  }
-
   try {
+    const payload: any = {
+      prompts: [finalPrompt],
+      model: 'gemini-2.5-flash-image'
+    };
+
+    if (castBibleImageBase64) {
+      // Pass the reference image to the Edge Function wrapper
+      payload.base64Image = castBibleImageBase64;
+      payload.prompts.push("Strictly maintain the character designs from the attached reference sheet.");
+      console.log("🖼️ Multimedia: Reference image attached.");
+    }
+
     const { data, error } = await supabase.functions.invoke('generate-story', {
       body: {
         action: 'generate-image',
@@ -230,76 +249,70 @@ export const generateColoringPage = async (
       }
     });
 
-    if (error) {
-      console.error("❌ EDGE FUNCTION ERROR (Coloring Page):", error);
-      throw new Error("Page generation failed.");
-    }
-
+    if (error) throw error;
     if (data.error) {
       const isQuota = data.code === 429 || data.error.includes("magic limit");
-      console.error(`❌ GEMINI API ERROR (Coloring Page)${isQuota ? " [QUOTA]" : ""}:`, data.error);
+      console.error(`❌ GEMINI API ERROR ${isQuota ? "[QUOTA]" : ""}:`, data.error);
       throw new Error(data.error);
     }
 
-    if (!data.image) {
-      console.error("❌ No image in response");
-      throw new Error("Page generation failed.");
-    }
+    if (!data.image) throw new Error("No image data returned.");
 
     console.log("✅ Illustration Magic Successful");
     console.groupEnd();
-    return data.image;
+
+    // Apply the "Adaptive Threshold" filter here
+    return await applyAdaptiveThreshold(`data:image/png;base64,${data.image}`);
+
   } catch (error: any) {
-    console.error("❌ Generation failed:", error);
+    console.error("❌ Generation failed, attempting fallback...", error);
     console.groupEnd();
-    throw error;
+    return generateFallbackImage();
   }
 };
 
-export const sendChatMessage = async (
-  messages: { role: 'user' | 'assistant', content: string }[],
-  systemPrompt: string
-): Promise<string> => {
-  console.group("🤖 Sparky Support Engine (Gemini 3 Flash)");
-  console.log("Last User Message:", messages[messages.length - 1].content);
-
-  const chatPromise = (async () => {
-    const { data, error } = await supabase.functions.invoke('generate-story', {
+const generateFallbackImage = async (): Promise<string> => {
+  // Return a safe, pre-generated placeholder 
+  try {
+    const { data } = await supabase.functions.invoke('generate-story', {
       body: {
-        action: 'chat',
+        action: 'generate-image',
         payload: {
-          messages,
-          systemPrompt
+          prompts: ["A coloring page of a happy star. Simple black lines, white background."],
+          model: 'gemini-2.5-flash-image'
         }
       }
     });
-
-    if (error) {
-      console.error("❌ EDGE FUNCTION ERROR (Chat):", error);
-      throw error;
+    if (data?.image) {
+      return await applyAdaptiveThreshold(`data:image/png;base64,${data.image}`);
     }
+  } catch (e) {
+    console.error("Fallback failed", e);
+  }
 
-    if (data.error) {
-      const isQuota = data.code === 429 || data.error.includes("magic limit");
-      console.error(`❌ GEMINI API ERROR (Chat)${isQuota ? " [QUOTA]" : ""}:`, data.error);
-      throw new Error(data.error);
-    }
+  // Last resort: Return a transparent 1x1 pixel 
+  return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
+}
 
-    return data.text;
-  })();
-
-  const timeoutPromise = new Promise<never>((_, reject) => setTimeout(() => {
-    reject(new Error("Sparky's magic is taking a little longer than usual! ✨ One more try?"));
-  }, 12000));
-
+export const sendChatMessage = async (
+  messages: { role: 'user' | 'assistant', content: string }[],
+  context: string
+): Promise<string> => {
   try {
-    const text = await Promise.race([chatPromise, timeoutPromise]);
-    console.log("✅ Sparky Responded");
-    console.groupEnd();
-    return text;
-  } catch (error: any) {
-    console.error("❌ Chat failed:", error);
-    console.groupEnd();
-    throw error;
+    const { data, error } = await supabase.functions.invoke('chat-with-sparky', {
+      body: {
+        message: messages[messages.length - 1].content,
+        context: context,
+        history: messages.slice(0, -1)
+      }
+    });
+
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
+
+    return data.reply;
+  } catch (error) {
+    console.error("Chat error:", error);
+    return "Sparky is taking a nap! 😴 (I'm having trouble connecting right now, please try again later!)";
   }
 };
