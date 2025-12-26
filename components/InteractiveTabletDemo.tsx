@@ -1,7 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { SparklesIcon, MagicIcon, FillBucketIcon, BrushIcon, UndoIcon, RedoIcon, XIcon } from './Icons';
 
-export const InteractiveTabletDemo: React.FC = () => {
+interface TabletDemoProps {
+    onCTA?: () => void;
+}
+
+export const InteractiveTabletDemo: React.FC<TabletDemoProps> = ({ onCTA }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isDrawing, setIsDrawing] = useState(false);
     const [strokeCount, setStrokeCount] = useState(0);
@@ -313,7 +317,10 @@ export const InteractiveTabletDemo: React.FC = () => {
                             <p className="text-xs text-slate-300 mt-2 font-bold">The full Magic Studio has 20+ colors, advanced tools, and your child as the star!</p>
                         </div>
                         <button
-                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            onClick={() => {
+                                if (onCTA) onCTA();
+                                else window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
                             className="w-full bg-[#FF721F] text-white py-3 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#FF853A] transition-all shadow-lg active:scale-95"
                         >
                             Explore the Full Magic →

@@ -108,7 +108,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
                      <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rounded-full z-20 border border-slate-700"></div>
 
                      {/* Interactive Tablet Demo Component */}
-                     <InteractiveTabletDemo />
+                     <InteractiveTabletDemo onCTA={onStartCreating} />
 
                      <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-20 h-1 bg-slate-800 rounded-full z-20"></div>
                   </div>
