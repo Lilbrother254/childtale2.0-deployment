@@ -134,7 +134,7 @@ export const InteractiveTabletDemo: React.FC = () => {
             const dg = Math.abs(data[pos + 1] - startG);
             const db = Math.abs(data[pos + 2] - startB);
 
-            if (dr + dg + db < 75) { // Further increased tolerance to eliminate white lines near aliased black borders
+            if (dr + dg + db < 110) { // Highly aggressive tolerance to bridge gaps in textured illustrations like the chair
                 data[pos] = r;
                 data[pos + 1] = g;
                 data[pos + 2] = b;

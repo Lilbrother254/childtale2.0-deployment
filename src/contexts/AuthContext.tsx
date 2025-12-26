@@ -116,6 +116,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
                 console.log("👁️ Tab focused - refreshing session...");
+                // Force an immediate loading state clear in case it was stuck
+                setIsLoading(false);
                 refreshProfile();
             }
         };
