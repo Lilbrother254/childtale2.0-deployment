@@ -42,21 +42,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
                      </p>
                   </div>
 
-                  <div className="bg-white border-2 border-blue-100 p-5 rounded-2xl flex gap-3 items-start max-w-lg shadow-lg transform -rotate-1 relative z-20">
-                     <div className="text-3xl">💛</div>
-                     <div>
-                        <p className="text-slate-700 italic font-medium leading-snug">
-                           "I made one when she was 4. She's 8 now and still has it. It's the only book she refused to donate."
-                        </p>
-                        <p className="text-xs font-bold text-blue-600 mt-2 uppercase tracking-wide">— Happy ChildTale Parent</p>
-                     </div>
-                  </div>
+
                </div>
 
                <div className="relative animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
                   <div className="relative rounded-[1rem] overflow-hidden shadow-2xl border-[2px] border-slate-200 group transform rotate-1 hover:rotate-0 transition-transform duration-500 bg-white aspect-[3/4] flex flex-col">
                      <div className="pt-8 px-8 text-center bg-white z-10">
-                        <h2 className="text-4xl font-['Comic_Neue'] font-bold text-white drop-shadow-[0_2px_0_rgba(0,0,0,1)] [-webkit-text-stroke:1.5px_black] tracking-wide mb-2">
+                        <h2 className="text-3xl md:text-4xl font-['Comic_Neue'] font-bold text-slate-800 mb-2">
                            Vinny's First Day
                         </h2>
                      </div>
