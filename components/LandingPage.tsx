@@ -48,14 +48,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
         const handleScroll = () => setScrollY(window.scrollY);
         window.addEventListener('scroll', handleScroll);
 
-        // Cookie consent check with 2s delay
+        // Cookie consent check
         const consent = localStorage.getItem('childtale-cookie-consent');
         if (!consent) {
-            const timer = setTimeout(() => setShowCookieBanner(true), 2000);
-            return () => {
-                window.removeEventListener('scroll', handleScroll);
-                clearTimeout(timer);
-            };
+            setShowCookieBanner(true);
         }
 
         return () => window.removeEventListener('scroll', handleScroll);
@@ -193,65 +189,76 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
     };
 
     return (
-        <div className="min-h-screen font-['Nunito'] text-slate-900 magical-mesh selection:bg-indigo-100 selection:text-indigo-900 transition-colors duration-700">
-            {/* 🏰 THE PALACE NAV: Floating Pill Style */}
-            <div className="fixed top-6 left-0 w-full z-[1000] px-4 pointer-events-none">
-                <nav className={`max-w-4xl mx-auto glass-pill rounded-full px-6 py-2 transition-all duration-500 pointer-events-auto flex items-center justify-between ${scrollY > 100 ? 'py-1.5 px-5' : ''}`}>
-                    <div onClick={() => handleNavClick('HOME')} className="cursor-pointer hover:opacity-80 transition-opacity">
-                        <ChildTaleLogo size="xs" dark={true} />
+        <div className="min-h-screen font-['Nunito'] text-slate-900 bg-slate-50">
+            {/* Top Navigation */}
+            <nav className={`fixed top-0 left-0 w-full transition-all duration-300 z-[120] ${isMobileMenuOpen ? 'bg-transparent' : (scrollY > 50 ? 'bg-white/98 backdrop-blur-md shadow-sm py-3' : 'bg-transparent py-5')}`}>
+                <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+                    <div onClick={() => handleNavClick('HOME')} className="cursor-pointer relative z-[110]">
+                        <ChildTaleLogo dark={!isMobileMenuOpen} size="sm" />
                     </div>
 
-                    {/* Minimalist Desktop Links */}
-                    <div className="hidden lg:flex items-center gap-8 font-black text-[10px] uppercase tracking-[0.2em] text-slate-500">
-                        <button onClick={() => handleNavClick('ABOUT')} className={`hover:text-indigo-600 transition-colors ${currentView === 'ABOUT' ? 'text-indigo-600' : ''}`}>About</button>
-                        <button onClick={() => handleNavClick('HOW_IT_WORKS')} className={`hover:text-indigo-600 transition-colors ${currentView === 'HOW_IT_WORKS' ? 'text-indigo-600' : ''}`}>Guide</button>
-                        <button onClick={() => handleNavClick('PRICING')} className={`hover:text-indigo-600 transition-colors ${currentView === 'PRICING' ? 'text-indigo-600' : ''}`}>Pricing</button>
+                    {/* Desktop Nav */}
+                    <div className="hidden lg:flex items-center gap-10 font-black text-[13px] uppercase tracking-widest text-slate-500">
+                        <button onClick={() => handleNavClick('HOME')} className={`transition-colors hover:text-indigo-600 ${currentView === 'HOME' ? 'text-indigo-600' : ''}`}>Home</button>
+                        <button onClick={() => handleNavClick('ABOUT')} className={`transition-colors hover:text-indigo-600 ${currentView === 'ABOUT' ? 'text-indigo-600' : ''}`}>About</button>
+                        <button onClick={() => handleNavClick('HOW_IT_WORKS')} className={`transition-colors hover:text-indigo-600 ${currentView === 'HOW_IT_WORKS' ? 'text-indigo-600' : ''}`}>Guide</button>
+                        <button onClick={() => handleNavClick('PRICING')} className={`transition-colors hover:text-indigo-600 ${currentView === 'PRICING' ? 'text-indigo-600' : ''}`}>Pricing</button>
+                        <button onClick={() => handleNavClick('FAQ')} className={`transition-colors hover:text-indigo-600 ${currentView === 'FAQ' ? 'text-indigo-600' : ''}`}>FAQ</button>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        {!user && (
-                            <button onClick={handleStartClick} className="hidden md:block font-black text-[10px] uppercase tracking-[0.2em] text-slate-400 hover:text-indigo-600 px-4">Login</button>
-                        )}
-                        <button
-                            onClick={user ? () => onLogin('reload') : handleStartClick}
-                            className={`bg-slate-900 text-white px-5 py-2.5 rounded-full font-black text-[10px] uppercase tracking-[0.25em] shadow-lg shadow-slate-200/50 hover:bg-slate-800 transition-all active:scale-95 ${scrollY > 100 ? 'px-4 py-2' : ''}`}
-                        >
-                            {user ? 'Studio' : 'Start'}
-                        </button>
+                    <div className="flex items-center gap-10 relative z-[60]">
+                        <div className="hidden lg:flex items-center gap-10">
+                            {user ? (
+                                <button onClick={handleLogout} className="font-black text-[13px] uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors">Sign Out</button>
+                            ) : (
+                                <button onClick={handleStartClick} className="font-black text-[13px] uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors">Sign In / Sign Up</button>
+                            )}
+                            <button
+                                onClick={user ? () => onLogin('reload') : handleStartClick}
+                                className="bg-[#FF721F] text-white px-8 py-4 rounded-full font-black text-[13px] uppercase tracking-widest shadow-2xl shadow-orange-200/50 hover:bg-[#FF853A] transition-all transform hover:-translate-y-0.5 active:scale-95"
+                            >
+                                Start Coloring Now
+                            </button>
+                        </div>
 
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            className="lg:hidden p-2 text-slate-900"
+                            className={`lg:hidden focus:outline-none transition-all relative z-[110] ${isMobileMenuOpen ? 'text-white' : 'text-slate-900 shadow-none'}`}
+                            aria-label="Toggle menu"
                         >
-                            <MenuIcon className="w-5 h-5" />
+                            {isMobileMenuOpen ? <XIcon className="w-8 h-8" /> : <MenuIcon className="w-8 h-8" />}
                         </button>
                     </div>
-                </nav>
-            </div>
+                </div>
 
-            {/* Mobile Menu Overlay: Glass Style */}
+            </nav>
+
+            {/* Mobile Menu Overlay - Moved outside nav for higher Z-stacking context */}
             <div
-                className={`fixed inset-0 z-[1100] transition-all duration-700 ease-in-out lg:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-                style={{ background: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(20px)' }}
+                className={`fixed inset-0 z-[100] transition-all duration-500 ease-in-out lg:hidden ${isMobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                style={{ backgroundColor: '#0f172a' }}
             >
-                <div className={`flex flex-col items-center justify-center h-full gap-8 px-6 text-center transform transition-all duration-700 ${isMobileMenuOpen ? 'translate-y-0 scale-100' : 'translate-y-20 scale-95 opacity-0'}`}>
-                    <div className="flex flex-col gap-8 w-full">
-                        <button onClick={() => handleNavClick('HOME')} className={`text-4xl font-black uppercase tracking-[0.2em] transition-colors ${currentView === 'HOME' ? 'text-indigo-400' : 'text-white/40 hover:text-white'}`}>Home</button>
-                        <button onClick={() => handleNavClick('ABOUT')} className={`text-4xl font-black uppercase tracking-[0.2em] transition-colors ${currentView === 'ABOUT' ? 'text-indigo-400' : 'text-white/40 hover:text-white'}`}>About</button>
-                        <button onClick={() => handleNavClick('PRICING')} className={`text-4xl font-black uppercase tracking-[0.2em] transition-colors ${currentView === 'PRICING' ? 'text-indigo-400' : 'text-white/40 hover:text-white'}`}>Pricing</button>
+                <div className={`flex flex-col items-center justify-center h-full gap-8 px-6 text-center transform transition-all duration-500 ${isMobileMenuOpen ? 'translate-y-0 scale-100' : '-translate-y-10 scale-95 opacity-0'}`}>
+                    <div className="flex flex-col gap-6 w-full">
+                        <button onClick={() => handleNavClick('HOME')} className={`text-4xl font-black uppercase tracking-[0.2em] transition-colors ${currentView === 'HOME' ? 'text-orange-400' : 'text-white hover:text-orange-300'}`}>Home</button>
+                        <button onClick={() => handleNavClick('ABOUT')} className={`text-4xl font-black uppercase tracking-[0.2em] transition-colors ${currentView === 'ABOUT' ? 'text-orange-400' : 'text-white hover:text-orange-300'}`}>About</button>
+                        <button onClick={() => handleNavClick('HOW_IT_WORKS')} className={`text-4xl font-black uppercase tracking-[0.2em] transition-colors ${currentView === 'HOW_IT_WORKS' ? 'text-orange-400' : 'text-white hover:text-orange-300'}`}>Guide</button>
+                        <button onClick={() => handleNavClick('PRICING')} className={`text-4xl font-black uppercase tracking-[0.2em] transition-colors ${currentView === 'PRICING' ? 'text-orange-400' : 'text-white hover:text-orange-300'}`}>Pricing</button>
+                        <button onClick={() => handleNavClick('FAQ')} className={`text-4xl font-black uppercase tracking-[0.2em] transition-colors ${currentView === 'FAQ' ? 'text-orange-400' : 'text-white hover:text-orange-300'}`}>FAQ</button>
                     </div>
 
-                    <div className="w-24 h-1 bg-white/5 rounded-full my-6" />
+                    <div className="w-24 h-1 bg-white/10 rounded-full my-6" />
 
-                    <div className="flex flex-col gap-4 w-full max-w-xs">
-                        <button
-                            onClick={user ? () => onLogin('reload') : handleStartClick}
-                            className="bg-indigo-600 text-white w-full py-5 rounded-full font-black text-sm uppercase tracking-[0.2em] shadow-2xl shadow-indigo-500/20 active:scale-95 transition-all"
-                        >
-                            {user ? 'My Studio' : 'Start Creating'}
-                        </button>
-                        <button onClick={() => setIsMobileMenuOpen(false)} className="text-white/30 font-black text-[10px] uppercase tracking-widest mt-4">Close Menu</button>
-                    </div>
+                    {user ? (
+                        <div className="flex flex-col gap-5 w-full max-w-xs">
+                            <button onClick={() => onLogin('reload')} className="bg-[#FF721F] text-white w-full py-5 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl shadow-orange-500/40 active:scale-95 transition-all">My Studio</button>
+                            <button onClick={handleLogout} className="text-white/60 font-black text-xs uppercase tracking-widest">Sign Out</button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-5 w-full max-w-xs">
+                            <button onClick={() => { handleStartClick(); setIsMobileMenuOpen(false); }} className="bg-[#FF721F] text-white w-full py-5 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl shadow-orange-500/40 active:scale-95 transition-all">Start Coloring Now</button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -271,15 +278,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
                 {currentView === 'COOKIES' && <CookiePolicy onBack={() => handleNavClick('HOME')} />}
             </main>
 
-            {/* 🏰 THE PALACE FOOTER */}
-            <footer className="py-24 px-6 bg-[#0f172a] text-white/40 mt-20 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12 text-center md:text-left">
-                    <div className="flex flex-col items-center md:items-start gap-8">
-                        <ChildTaleLogo size="xs" dark={false} />
-                        <p className="max-w-xs text-[10px] font-bold uppercase tracking-[0.2em] text-white/20 leading-relaxed">
-                            Elevating childhood memories through handcrafted AI magic.
-                        </p>
+            {/* Footer */}
+            <footer className="py-16 px-6 bg-slate-900 text-white">
+                <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
+                    <div className="flex flex-col items-center md:items-start gap-6">
+                        <ChildTaleLogo size="sm" dark={false} />
+                        <p className="text-white/40 text-sm font-bold max-w-xs text-center md:text-left leading-relaxed">Making core memories and sparks of imagination, one page at a time.</p>
                     </div>
                     <div className="flex flex-col md:flex-row gap-8 items-center font-black text-[13px] uppercase tracking-[0.2em] text-white/50">
                         <button onClick={() => handleNavClick('PRIVACY')} className="hover:text-white transition-colors">Privacy Policy</button>
@@ -287,25 +291,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
                         <button onClick={() => handleNavClick('COOKIES')} className="hover:text-white transition-colors">Cookie Policy</button>
                         <a href="mailto:childtale4@gmail.com" className="hover:text-white transition-colors">Support</a>
                     </div>
-                    <p className="text-white/20 text-[11px] font-black uppercase tracking-[0.3em] md:ml-auto">© {new Date().getFullYear()} ChildTale</p>
+                    <p className="text-white/20 text-[11px] font-black uppercase tracking-[0.3em]">© {new Date().getFullYear()} ChildTale</p>
                 </div>
             </footer>
 
-            {/* Cookie Consent Snackbar (Delayed & Slim) */}
+            {/* Cookie Consent Banner */}
             {showCookieBanner && (
-                <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-8 md:w-80 z-[200] animate-fade-in-up">
-                    <div className="bg-white/90 backdrop-blur-xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-2xl p-4 flex items-center gap-4">
-                        <div className="flex-grow">
-                            <p className="text-[11px] text-slate-500 font-black uppercase tracking-widest leading-relaxed">
-                                Experience enhanced magic with our <button onClick={() => handleNavClick('COOKIES')} className="text-indigo-600 underline">cookies</button>.
-                            </p>
+                <div className="fixed bottom-6 left-6 right-6 md:left-auto md:w-96 z-[110] bg-white rounded-2xl shadow-2xl p-6 border border-slate-100 animate-fade-in">
+                    <div className="flex items-start gap-4">
+                        <div className="bg-indigo-50 p-2 rounded-xl">
+                            <SparklesIcon className="w-6 h-6 text-indigo-600" />
                         </div>
-                        <button
-                            onClick={acceptCookies}
-                            className="bg-slate-900 text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 transition-all flex-shrink-0"
-                        >
-                            Got it!
-                        </button>
+                        <div className="space-y-3">
+                            <h4 className="font-black text-slate-900 text-lg">Cookies & Privacy</h4>
+                            <p className="text-sm text-slate-500 font-bold leading-relaxed">
+                                We use cookies to ensure you get the best experience on ChildTale, compliant with GDPR and CCPA.
+                                <button onClick={() => handleNavClick('COOKIES')} className="text-indigo-600 hover:underline ml-1">Learn more</button>.
+                            </p>
+                            <button
+                                onClick={acceptCookies}
+                                className="w-full bg-slate-900 text-white py-3 rounded-xl font-black text-sm uppercase tracking-widest hover:bg-slate-800 transition-all"
+                            >
+                                Got it!
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
