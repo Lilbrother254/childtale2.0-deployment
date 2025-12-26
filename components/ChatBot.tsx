@@ -16,7 +16,6 @@ export const ChatBot: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
 
-    if (!user) return null;
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -62,6 +61,9 @@ TONE:
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Hook Re-ordering Fix: Return null ONLY after all hooks are called
+    if (!user) return null;
 
     const sendMessage = async (messageText?: string) => {
         const textToSend = messageText || input.trim();
