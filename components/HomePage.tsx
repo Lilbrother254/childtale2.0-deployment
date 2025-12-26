@@ -32,13 +32,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
                         They're Only <br />Little Once.
                      </h1>
                      <h2 className="text-2xl md:text-4xl font-extrabold font-['Nunito'] text-indigo-600 mt-2 relative inline-block tracking-tight">
-                        Capture It Before It's Gone.
+                        Weave Their Magic Into a Forever Keepsake.
                      </h2>
                   </div>
 
                   <div className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-lg font-medium space-y-4">
                      <p>
-                        Turn their dreams and memories into a <span className="font-bold text-slate-900 bg-yellow-100 px-1">25-page custom coloring book</span> where <span className="font-bold text-slate-900">THEY are the main character</span>.
+                        ChildTale transforms your child's dreams into personalized <span className="font-bold text-slate-900 bg-yellow-100 px-1">25-page coloring books</span>—where <span className="font-bold text-slate-900">they're the hero of every page</span>.
                      </p>
                   </div>
 
