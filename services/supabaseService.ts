@@ -6,9 +6,9 @@ import BinaryWorker from '../src/workers/binary.worker?worker';
 export const supabaseService = {
     // --- Profile & Credits ---
     async getProfile(userId: string, retryAttempt: number = 0): Promise<UserProfile | null> {
-        const maxRetries = 3;
-        const timeoutMs = 15000; // Increased to 15s to handle database wake-up or connection lag
-        const retryDelays = [0, 2000, 5000]; // Backoff: immediate, 2s, 5s
+        const maxRetries = 4;
+        const timeoutMs = 25000; // Aggressive increase to 25s for slow cold starts
+        const retryDelays = [0, 2000, 5000, 10000]; // Longer backoff
 
         console.log(`🔍 Fetching profile for: ${userId}${retryAttempt > 0 ? ` (attempt ${retryAttempt + 1}/${maxRetries})` : ''}`);
 

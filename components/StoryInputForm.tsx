@@ -30,17 +30,26 @@ export const StoryInputForm: React.FC<StoryInputFormProps> = ({ onSubmit, onAddT
         pageCount: isSampleDisabled ? 25 : 5
     });
     const [agreedToTerms, setAgreedToTerms] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isAddingToCart, setIsAddingToCart] = useState(false);
 
-    const handleSubmit = async (isCart: boolean = false) => {
-        if (isSubmitting) return;
-        setIsSubmitting(true);
+    const handleGenerate = async () => {
+        if (isGenerating || isAddingToCart) return;
+        setIsGenerating(true);
         try {
-            if (isCart) await onAddToCart(input);
-            else await onSubmit(input);
+            await onSubmit(input);
+        } catch (err) {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleAddToCart = async () => {
+        if (isGenerating || isAddingToCart) return;
+        setIsAddingToCart(true);
+        try {
+            await onAddToCart(input);
         } finally {
-            // We only reset if it was a cart add - for main submit, the page will likely transition
-            if (isCart) setIsSubmitting(false);
+            setIsAddingToCart(false);
         }
     };
 
@@ -242,28 +251,28 @@ export const StoryInputForm: React.FC<StoryInputFormProps> = ({ onSubmit, onAddT
                                 <button onClick={handlePrev} className="flex-1 py-4 text-slate-400 font-black hover:text-slate-600 transition-colors uppercase tracking-widest text-sm">Back</button>
                                 <div className="flex-[2] relative">
                                     <button
-                                        onClick={() => handleSubmit(false)}
-                                        disabled={!isStep3Valid || isSubmitting}
+                                        onClick={handleGenerate}
+                                        disabled={!isStep3Valid || isGenerating || isAddingToCart}
                                         className={`w-full py-5 text-white rounded-[2rem] font-black text-xl shadow-2xl transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3
                                     ${input.pageCount === 25 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-900 hover:bg-slate-800'}
                                 `}
                                     >
                                         <SparklesIcon className="w-6 h-6" />
-                                        {isSubmitting ? 'Summoning Magic...' : (input.pageCount === 25 ? 'Pay & Generate' : 'Generate Free Sample')}
+                                        {isGenerating ? 'Summoning Magic...' : (input.pageCount === 25 ? 'Pay & Generate' : 'Generate Free Sample')}
                                     </button>
-                                    {!isStep3Valid && !isSubmitting && <div onClick={handleDisabledClick} className="absolute inset-0 cursor-pointer" />}
+                                    {!isStep3Valid && !isGenerating && !isAddingToCart && <div onClick={handleDisabledClick} className="absolute inset-0 cursor-pointer" />}
                                 </div>
                             </div>
                             {input.pageCount === 25 && (
                                 <div className="relative">
                                     <button
-                                        onClick={() => handleSubmit(true)}
-                                        disabled={!isStep3Valid || isSubmitting}
+                                        onClick={handleAddToCart}
+                                        disabled={!isStep3Valid || isGenerating || isAddingToCart}
                                         className="w-full py-4 text-indigo-600 font-black border-2 border-indigo-600 rounded-[2rem] hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 disabled:opacity-30"
                                     >
-                                        <ShoppingCartIcon className="w-5 h-5" /> {isSubmitting ? 'Adding...' : 'Add to Cart (Draft)'}
+                                        <ShoppingCartIcon className="w-5 h-5" /> {isAddingToCart ? 'Adding...' : 'Add to Cart (Draft)'}
                                     </button>
-                                    {!isStep3Valid && !isSubmitting && <div onClick={handleDisabledClick} className="absolute inset-0 cursor-pointer" />}
+                                    {!isStep3Valid && !isGenerating && !isAddingToCart && <div onClick={handleDisabledClick} className="absolute inset-0 cursor-pointer" />}
                                 </div>
                             )}
                         </div>
