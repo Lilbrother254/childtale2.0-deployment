@@ -6,9 +6,9 @@ import BinaryWorker from '../src/workers/binary.worker?worker';
 export const supabaseService = {
     // --- Profile & Credits ---
     async getProfile(userId: string, retryAttempt: number = 0): Promise<UserProfile | null> {
-        const maxRetries = 4;
-        const timeoutMs = 25000; // Aggressive increase to 25s for slow cold starts
-        const retryDelays = [0, 2000, 5000, 10000]; // Longer backoff
+        const maxRetries = 5;
+        const timeoutMs = 35000; // Aggressive increase to 35s for slow cold starts
+        const retryDelays = [0, 2000, 5000, 10000, 20000]; // Longer backoff
 
         console.log(`🔍 Fetching profile for: ${userId}${retryAttempt > 0 ? ` (attempt ${retryAttempt + 1}/${maxRetries})` : ''}`);
 
@@ -110,7 +110,7 @@ export const supabaseService = {
 
         const timeoutPromise = new Promise<null>((_, reject) => setTimeout(() => {
             reject(new Error("Profile creation timed out."));
-        }, 10000));
+        }, 25000));
 
         const data: any = await Promise.race([createPromise, timeoutPromise]);
 
@@ -173,8 +173,8 @@ export const supabaseService = {
         })();
 
         const timeoutPromise = new Promise<string>((_, reject) => setTimeout(() => {
-            reject(new Error("Magic book creation timed out (30s). Please check your connection."));
-        }, 30000));
+            reject(new Error("Magic book creation timed out (45s). Please check your connection."));
+        }, 45000));
 
         return await Promise.race([insertPromise, timeoutPromise]);
     },

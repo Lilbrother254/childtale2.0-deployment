@@ -103,9 +103,10 @@ export const AppRouter: React.FC = () => {
                 setCheckoutStoryId(bookId);
                 setPendingInput(input);
                 setShowPaymentModal(true);
-            } catch (err) {
+            } catch (err: any) {
                 console.error("❌ Failed to pre-create book shell:", err);
-                alert("Could not start checkout. Please try again.");
+                alert(err.message || "Could not start checkout. Please try again.");
+                throw err; // Re-throw to reset form loading state
             }
         } else {
             console.log("🎁 Processing free sample (5 pages)...");
