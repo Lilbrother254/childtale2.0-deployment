@@ -147,6 +147,14 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                         imagePrompt: p.imagePrompt
                     });
                 }
+
+                // LOCK-IN SYNC: Hydrate and set active story so the UI switches to Studio immediately
+                const lockedStory = await supabaseService.getBookDetails(bookId);
+                if (lockedStory) {
+                    setStories(prev => prev.map(s => s.id === bookId ? lockedStory : s));
+                    setActiveStory(lockedStory);
+                    console.log("🚀 UI Switch: Story structure locked and active.");
+                }
             }
 
             await supabaseService.updateBookStatus(bookId, 'generating');
@@ -210,11 +218,17 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     imageUrl: imageUrl
                 };
 
-                setStories(prev => prev.map(s =>
+                const updateState = (prev: Story[]) => prev.map(s =>
                     s.id === bookId
-                        ? { ...s, pages: [...(s.pages || []).filter(p => p.pageNumber !== pageNum), newStoryPage].sort((a, b) => a.pageNumber - b.pageNumber), status: 'generating' }
+                        ? { ...s, pages: [...(s.pages || []).filter(p => p.pageNumber !== pageNum), newStoryPage].sort((a, b) => a.pageNumber - b.pageNumber), status: 'generating' as any }
                         : s
-                ));
+                );
+
+                setStories(updateState);
+                // Force activeStory update so components watching it refresh
+                const updatedStories = updateState(stories);
+                const currentActive = updatedStories.find(s => s.id === bookId);
+                if (currentActive) setActiveStory(currentActive);
             }
 
             setGenerationProgress({ currentStep: "Finalizing Magic...", progress: 100 });

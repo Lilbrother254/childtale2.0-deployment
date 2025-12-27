@@ -222,43 +222,62 @@ export const MagicStudioPage: React.FC<MagicStudioPageProps> = ({
             ) : (
                 /* Pages Grid */
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {selectedBook.pages.map((page, index) => (
-                        <div
-                            key={index}
-                            onClick={() => onOpenColoring(selectedBook, index)}
-                            className="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 cursor-pointer group hover:shadow-lg hover:-translate-y-1 transition-all"
-                        >
-                            <div className="aspect-[3/4] rounded-xl overflow-hidden bg-slate-50 relative border border-slate-100">
-                                <img
-                                    src={page.coloredImageUrl || page.imageUrl}
-                                    alt={`Page ${index + 1}`}
-                                    className="w-full h-full object-contain p-2"
-                                />
+                    {selectedBook.pages.map((page, index) => {
+                        const isGenerating = !page.imageUrl;
+                        return (
+                            <div
+                                key={index}
+                                onClick={() => !isGenerating && onOpenColoring(selectedBook, index)}
+                                className={`bg-white p-3 rounded-2xl shadow-sm border border-slate-100 transition-all ${isGenerating ? 'cursor-default' : 'cursor-pointer group hover:shadow-lg hover:-translate-y-1'}`}
+                            >
+                                <div className={`aspect-[3/4] rounded-xl overflow-hidden relative border border-slate-100 flex flex-col ${isGenerating ? 'bg-indigo-50/50' : 'bg-slate-50'}`}>
+                                    {isGenerating ? (
+                                        <div className="flex-1 flex flex-col p-4 animate-pulse">
+                                            {/* Drawing Placeholder */}
+                                            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center mb-4">
+                                                <div className="w-10 h-10 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Summoning Art...</p>
+                                            </div>
+                                            {/* Text Preview */}
+                                            <div className="bg-white/60 backdrop-blur-sm p-3 rounded-lg border border-indigo-100/50">
+                                                <p className="text-[11px] text-slate-600 line-clamp-4 leading-relaxed italic font-medium">
+                                                    "{page.text}"
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <img
+                                                src={page.coloredImageUrl || page.imageUrl}
+                                                alt={`Page ${index + 1}`}
+                                                className="w-full h-full object-contain p-2"
+                                            />
+                                            {/* Overlay */}
+                                            <div className="absolute inset-0 bg-indigo-900/0 group-hover:bg-indigo-900/10 transition-colors flex items-center justify-center">
+                                                <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold shadow-lg transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all flex items-center gap-2">
+                                                    <BrushIcon className="w-4 h-4" /> Color Now
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
 
-                                {/* Overlay */}
-                                <div className="absolute inset-0 bg-indigo-900/0 group-hover:bg-indigo-900/10 transition-colors flex items-center justify-center">
-                                    {/* Color Now Button - Always visible on hover */}
-                                    <button className="bg-indigo-600 text-white px-5 py-2.5 rounded-full font-bold shadow-lg transform translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all flex items-center gap-2">
-                                        <BrushIcon className="w-4 h-4" /> Color Now
-                                    </button>
-                                </div>
-
-                                {/* Status Indicators */}
-                                <div className="absolute top-2 left-2">
-                                    <span className="w-8 h-8 bg-white/90 backdrop-blur rounded-full flex items-center justify-center text-sm font-bold text-slate-500 shadow-sm">
-                                        {index + 1}
-                                    </span>
-                                </div>
-                                {page.coloredImageUrl && (
-                                    <div className="absolute top-2 right-2">
-                                        <span className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center shadow-md">
-                                            <CheckIcon className="w-4 h-4" />
+                                    {/* Status Indicators */}
+                                    <div className="absolute top-2 left-2">
+                                        <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-sm backdrop-blur ${isGenerating ? 'bg-indigo-600 text-white' : 'bg-white/90 text-slate-500'}`}>
+                                            {index + 1}
                                         </span>
                                     </div>
-                                )}
+                                    {page.coloredImageUrl && (
+                                        <div className="absolute top-2 right-2">
+                                            <span className="w-8 h-8 bg-green-500 text-white rounded-full flex items-center justify-center shadow-md">
+                                                <CheckIcon className="w-4 h-4" />
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>
