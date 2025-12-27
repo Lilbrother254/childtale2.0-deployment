@@ -266,34 +266,11 @@ export const generateColoringPage = async (
     return await applyAdaptiveThreshold(`data:image/png;base64,${data.image}`);
 
   } catch (error: any) {
-    console.error("❌ Generation failed, attempting fallback...", error);
+    console.error("❌ Illustration Magic failed:", error);
     console.groupEnd();
-    return generateFallbackImage();
+    throw error; // Propagate the error to StoryContext
   }
 };
-
-const generateFallbackImage = async (): Promise<string> => {
-  // Return a safe, pre-generated placeholder 
-  try {
-    const { data } = await supabase.functions.invoke('generate-story', {
-      body: {
-        action: 'generate-image',
-        payload: {
-          prompts: ["A coloring page of a happy star. Simple black lines, white background."],
-          model: 'gemini-2.5-flash-image'
-        }
-      }
-    });
-    if (data?.image) {
-      return await applyAdaptiveThreshold(`data:image/png;base64,${data.image}`);
-    }
-  } catch (e) {
-    console.error("Fallback failed", e);
-  }
-
-  // Last resort: Return a transparent 1x1 pixel 
-  return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII=";
-}
 
 export const sendChatMessage = async (
   messages: { role: 'user' | 'assistant', content: string }[],

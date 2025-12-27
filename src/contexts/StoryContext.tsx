@@ -190,6 +190,8 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const isQuota = error.message?.includes("magic limit") || error.message?.includes("429");
 
             await supabaseService.updateBookStatus(story.id, 'failed');
+            // Update local state if this is the active story
+            setActiveStory(prev => prev && prev.id === story.id ? { ...prev, status: 'failed' } : prev);
 
             if (isQuota) {
                 // If it's a quota error, we might want to alert if it's the active story
@@ -216,9 +218,13 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setIsGenerating(true);
         setGenerationProgress({ currentStep: 'Consulting the Magic Library', progress: 5 });
 
+        let bookId = existingBookId || '';
+
         try {
             // Use existing ID if we pre-created the shell, otherwise create new
-            const bookId = existingBookId || await supabaseService.createBook(user.id, input, `${input.childName}'s Adventure`);
+            if (!bookId) {
+                bookId = await supabaseService.createBook(user.id, input, `${input.childName}'s Adventure`);
+            }
 
             setGenerationProgress({ currentStep: 'Weaving the Tale', progress: 15 });
             const structure = await geminiService.generateStoryStructure(
@@ -328,14 +334,16 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const isQuota = error.message?.includes("magic limit") || error.message?.includes("429");
 
             if (isQuota) {
-                alert("🌟 Our magic is taking a quick break! We've hit our daily magic limit. Please try again later!");
+                alert("🌟 Our magic is taking a quick break! We've hit our daily magic limit for image creation. Please try again in a few hours!");
             } else {
                 alert("Magic fizzled out: " + (error as Error).message);
             }
 
-            // Mark as failed in DB too
-            if (activeStory?.id) {
-                await supabaseService.updateBookStatus(activeStory.id, 'failed');
+            // Mark as failed in DB using the captured bookId for reliability
+            if (bookId) {
+                await supabaseService.updateBookStatus(bookId, 'failed');
+                // Also update local state so UI doesn't show 'generating' ghost version
+                setActiveStory(prev => prev && prev.id === bookId ? { ...prev, status: 'failed' } : prev);
             }
 
             // Auto-refresh library to show updated status

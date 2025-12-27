@@ -122,6 +122,7 @@ export const AppRouter: React.FC = () => {
                 setAppState(AppState.PREVIEW);
             }).catch(err => {
                 console.error("❌ Generation failed:", err);
+                setAppState(AppState.LIBRARY);
             });
         }
     };
@@ -140,6 +141,9 @@ export const AppRouter: React.FC = () => {
             generateStory(pendingInput, capturedBookId || undefined).then(() => {
                 setPendingInput(null);
                 setAppState(AppState.PREVIEW);
+            }).catch(err => {
+                console.error("❌ Checkout-triggered generation failed:", err);
+                setAppState(AppState.LIBRARY);
             });
         } else {
             setAppState(AppState.LIBRARY);

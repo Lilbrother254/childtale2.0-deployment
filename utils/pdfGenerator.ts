@@ -1,15 +1,6 @@
-
+import { jsPDF } from 'jspdf';
+import 'svg2pdf.js';
 import { Story, UserInput, StoryCategory } from "../types";
-
-// Access jsPDF from the window object where the CDN script attaches it
-const getJsPDF = () => {
-  // Check both potential global namespaces
-  const lib = (window as any).jspdf || (window as any).jsPDF;
-  if (!lib) {
-    throw new Error("PDF Generator library not loaded. Please reload the page.");
-  }
-  return lib;
-};
 
 // --- LULU SPECIFICATIONS (US LETTER 8.5 x 11) ---
 // All units in INCHES
@@ -82,8 +73,6 @@ const imageUrlToBase64 = async (url: string): Promise<string> => {
  * Specs: 8.5 x 11 Trim, 0.125 Bleed on all sides.
  */
 export const createInteriorDoc = async (story: Story, userInput: UserInput) => {
-  const jspdfLib = getJsPDF();
-  const { jsPDF } = jspdfLib;
 
   const pdfWidth = TRIM_WIDTH + (INTERIOR_BLEED * 2);
   const pdfHeight = TRIM_HEIGHT + (INTERIOR_BLEED * 2);
@@ -216,8 +205,6 @@ export const createInteriorDoc = async (story: Story, userInput: UserInput) => {
  * Creates the Cover JS PDF Object (Does not save)
  */
 export const createCoverDoc = async (story: Story, userInput: UserInput) => {
-  const jspdfLib = getJsPDF();
-  const { jsPDF } = jspdfLib;
 
   const spineWidth = Math.max(0.25, (story.pageCount || 25) / PPI);
   const singleCoverWidth = TRIM_WIDTH;
@@ -381,8 +368,6 @@ export const generateLuluCoverPDF = async (story: Story, userInput: UserInput) =
  */
 export const generateHomePrintPDF = async (story: Story, userInput: UserInput) => {
   try {
-    const jspdfLib = getJsPDF();
-    const { jsPDF } = jspdfLib;
 
     const pdfWidth = TRIM_WIDTH + (INTERIOR_BLEED * 2);
     const pdfHeight = TRIM_HEIGHT + (INTERIOR_BLEED * 2);
@@ -543,8 +528,6 @@ import VectorWorker from '../src/workers/vectorizer.worker?worker';
 // --- VECTOR / INFINITE RESOLUTION ENGINES ---
 
 export const createVectorInteriorDoc = async (story: Story, userInput: UserInput, onProgress?: (percent: number) => void) => {
-  const jspdfLib = getJsPDF();
-  const { jsPDF } = jspdfLib;
 
   const pdfWidth = TRIM_WIDTH + (INTERIOR_BLEED * 2);
   const pdfHeight = TRIM_HEIGHT + (INTERIOR_BLEED * 2);
@@ -653,8 +636,6 @@ export const createVectorInteriorDoc = async (story: Story, userInput: UserInput
 };
 
 export const createVectorCoverDoc = async (story: Story, userInput: UserInput) => {
-  const jspdfLib = getJsPDF();
-  const { jsPDF } = jspdfLib;
 
   const spineWidth = Math.max(0.25, (story.pageCount || 25) / PPI);
   const singleCoverWidth = TRIM_WIDTH;
