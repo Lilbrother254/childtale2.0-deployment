@@ -124,7 +124,7 @@ export const generateStoryStructure = async (
         action: 'generate-text',
         payload: {
           prompt: systemPrompt,
-          model: 'gemini-1.5-pro'
+          model: 'gemini-3-flash-preview'
         }
       }
     });
@@ -326,7 +326,7 @@ export const sendChatMessage = async (
         action: 'generate-text',
         payload: {
           prompt: finalPrompt,
-          model: 'gemini-1.5-pro' // Switched to 1.5 Pro to match known-working backend config
+          model: 'gemini-3-flash-preview' // Updated to ChildTale 2.0 Spec
         }
       }
     });
