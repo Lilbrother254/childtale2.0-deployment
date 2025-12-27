@@ -226,6 +226,9 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 bookId = await supabaseService.createBook(user.id, input, `${input.childName}'s Adventure`);
             }
 
+            // CRITICAL: Add to queue IMMEDIATELY to prevent background loop from picking it up
+            processingQueue.current.add(bookId);
+
             setGenerationProgress({ currentStep: 'Weaving the Tale', progress: 15 });
             const structure = await geminiService.generateStoryStructure(
                 input.childName,

@@ -30,6 +30,19 @@ export const StoryInputForm: React.FC<StoryInputFormProps> = ({ onSubmit, onAddT
         pageCount: isSampleDisabled ? 25 : 5
     });
     const [agreedToTerms, setAgreedToTerms] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleSubmit = async (isCart: boolean = false) => {
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        try {
+            if (isCart) await onAddToCart(input);
+            else await onSubmit(input);
+        } finally {
+            // We only reset if it was a cart add - for main submit, the page will likely transition
+            if (isCart) setIsSubmitting(false);
+        }
+    };
 
     const handleNext = () => setStep(s => s + 1);
     const handlePrev = () => setStep(s => s - 1);
@@ -229,28 +242,28 @@ export const StoryInputForm: React.FC<StoryInputFormProps> = ({ onSubmit, onAddT
                                 <button onClick={handlePrev} className="flex-1 py-4 text-slate-400 font-black hover:text-slate-600 transition-colors uppercase tracking-widest text-sm">Back</button>
                                 <div className="flex-[2] relative">
                                     <button
-                                        onClick={() => onSubmit(input)}
-                                        disabled={!isStep3Valid}
+                                        onClick={() => handleSubmit(false)}
+                                        disabled={!isStep3Valid || isSubmitting}
                                         className={`w-full py-5 text-white rounded-[2rem] font-black text-xl shadow-2xl transition-all transform hover:-translate-y-1 active:scale-95 disabled:opacity-30 flex items-center justify-center gap-3
                                     ${input.pageCount === 25 ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-slate-900 hover:bg-slate-800'}
                                 `}
                                     >
                                         <SparklesIcon className="w-6 h-6" />
-                                        {input.pageCount === 25 ? 'Pay & Generate' : 'Generate Free Sample'}
+                                        {isSubmitting ? 'Summoning Magic...' : (input.pageCount === 25 ? 'Pay & Generate' : 'Generate Free Sample')}
                                     </button>
-                                    {!isStep3Valid && <div onClick={handleDisabledClick} className="absolute inset-0 cursor-pointer" />}
+                                    {!isStep3Valid && !isSubmitting && <div onClick={handleDisabledClick} className="absolute inset-0 cursor-pointer" />}
                                 </div>
                             </div>
                             {input.pageCount === 25 && (
                                 <div className="relative">
                                     <button
-                                        onClick={() => onAddToCart(input)}
-                                        disabled={!isStep3Valid}
+                                        onClick={() => handleSubmit(true)}
+                                        disabled={!isStep3Valid || isSubmitting}
                                         className="w-full py-4 text-indigo-600 font-black border-2 border-indigo-600 rounded-[2rem] hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 disabled:opacity-30"
                                     >
-                                        <ShoppingCartIcon className="w-5 h-5" /> Add to Cart (Draft)
+                                        <ShoppingCartIcon className="w-5 h-5" /> {isSubmitting ? 'Adding...' : 'Add to Cart (Draft)'}
                                     </button>
-                                    {!isStep3Valid && <div onClick={handleDisabledClick} className="absolute inset-0 cursor-pointer" />}
+                                    {!isStep3Valid && !isSubmitting && <div onClick={handleDisabledClick} className="absolute inset-0 cursor-pointer" />}
                                 </div>
                             )}
                         </div>

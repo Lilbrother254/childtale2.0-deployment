@@ -110,6 +110,9 @@ export const generateStoryStructure = async (
     User Prompt: ${prompt}.
     Additional details: ${description}.
     
+    IMPORTANT: You MUST return EXACTLY ${pageCount} pages. Do not return more, do not return less. 
+    Each page must represent a distinct scene in the requested story.
+    
     Output a JSON object with:
     - title: Creative story title
     - characterDescription: A specific physical description of ${childName} for visual consistency.
