@@ -326,7 +326,7 @@ export const sendChatMessage = async (
         action: 'generate-text',
         payload: {
           prompt: finalPrompt,
-          model: 'gemini-2.0-flash-exp' // Using the smartest model for conversation
+          model: 'gemini-1.5-pro' // Switched to 1.5 Pro to match known-working backend config
         }
       }
     });
