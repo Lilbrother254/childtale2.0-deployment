@@ -70,17 +70,30 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Cleanup Logic: Ensure purchased items don't linger
     useEffect(() => {
         if (!user || cart.length === 0) return;
+
         const validate = async () => {
-            const bookIds = cart.map(item => item.bookId);
-            const validItems = await supabaseService.validateCartBooks(bookIds);
-            const validCart = cart.filter(item => validItems.includes(item.bookId));
+            // FIX: Only validate items that HAVE a real database ID. 
+            // Ignore TEMP_ items as they are currently syncing in the background.
+            const syncableItems = cart.filter(item => !item.bookId.startsWith('TEMP_'));
+            if (syncableItems.length === 0) return;
+
+            const bookIds = syncableItems.map(item => item.bookId);
+            const validDbIds = await supabaseService.validateCartBooks(bookIds);
+
+            // A cart item is valid if:
+            // 1. It's an optimistic TEMP_ item (not yet synced)
+            // 2. OR its DB ID is still valid (not deleted/purchased)
+            const validCart = cart.filter(item =>
+                item.bookId.startsWith('TEMP_') || validDbIds.includes(item.bookId)
+            );
 
             if (validCart.length !== cart.length) {
                 console.log("🛒 Auto-clearing purchased or invalid items from cart...");
                 setCart(validCart);
             }
         };
-        const timer = setTimeout(validate, 2000);
+        // Run validation with a delay to give background syncs time to complete 
+        const timer = setTimeout(validate, 3000);
         return () => clearTimeout(timer);
     }, [user, cart.length]);
 
