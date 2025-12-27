@@ -277,7 +277,7 @@ export const supabaseService = {
     // --- Image Storage ---
     async uploadImage(userId: string, bookId: string, pageNumber: number | string, base64: string, isColored: boolean = false): Promise<string> {
         const bucket = isColored ? 'colored-masterpieces' : 'story-images';
-        const filePath = `${userId} /${bookId}/page_${pageNumber}.png`;
+        const filePath = `${userId}/${bookId}/page_${pageNumber}.png`;
 
         console.log(`[STORAGE] Uploading to ${bucket}: ${filePath} `, { userId, bookId, pageNumber });
 
@@ -337,7 +337,7 @@ export const supabaseService = {
     async uploadPDF(userId: string, bookId: string, type: 'interior' | 'cover', blob: Blob): Promise<string> {
         const bucket = 'pdfs';
         const timestamp = Date.now();
-        const filePath = `${userId} /${bookId}/${type}_${timestamp}.pdf`;
+        const filePath = `${userId}/${bookId}/${type}_${timestamp}.pdf`;
         console.log(`[STORAGE] Uploading to ${bucket}: ${filePath} `, { userId, bookId, type });
 
         const { error } = await supabase.storage.from(bucket).upload(filePath, blob, {
