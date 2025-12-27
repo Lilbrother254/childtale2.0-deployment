@@ -337,7 +337,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             const isQuota = error.message?.includes("magic limit") || error.message?.includes("429");
 
             if (isQuota) {
-                alert("🌟 Our magic is taking a quick break! We've hit our daily magic limit for image creation. Please try again in a few hours!");
+                alert("🌟 Our magic is taking a quick break! We've hit our daily quota for free stories. Please try again tomorrow, or upgrade to our Premium plan for unlimited creation.");
             } else {
                 alert("Magic fizzled out: " + (error as Error).message);
             }
@@ -422,7 +422,7 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         const pageNum = story.pages[pageIndex].pageNumber;
         const rawUrl = await supabaseService.uploadImage(user.id, bookId, pageNum, dataUrl, true);
-        const coloredUrl = `${rawUrl}?t=${Date.now()}`;
+        const coloredUrl = `${rawUrl}?t = ${Date.now()} `;
 
         await supabaseService.updatePageColor(bookId, pageNum, rawUrl);
 

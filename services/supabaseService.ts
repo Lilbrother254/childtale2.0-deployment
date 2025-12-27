@@ -1,81 +1,93 @@
-
 import { supabase } from '../utils/supabaseClient';
 import { Story, StoryPage, UserInput, UserProfile } from '../types';
 import BinaryWorker from '../src/workers/binary.worker?worker';
 
+const profileCache = new Map<string, Promise<UserProfile | null>>();
+
 export const supabaseService = {
     // --- Profile & Credits ---
     async getProfile(userId: string, retryAttempt: number = 0): Promise<UserProfile | null> {
-        const maxRetries = 5;
-        const timeoutMs = 35000; // Aggressive increase to 35s for slow cold starts
-        const retryDelays = [0, 2000, 5000, 10000, 20000]; // Longer backoff
-
-        console.log(`🔍 Fetching profile for: ${userId}${retryAttempt > 0 ? ` (attempt ${retryAttempt + 1}/${maxRetries})` : ''}`);
+        // Dedup: If a fetch for this user is already in progress, return the same promise
+        if (profileCache.has(userId) && retryAttempt === 0) {
+            console.log(`📎 Reusing pending profile fetch for: ${userId}`);
+            return profileCache.get(userId)!;
+        }
 
         const fetchPromise = (async () => {
-            const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', userId)
-                .maybeSingle();
+            const maxRetries = 5;
+            const timeoutMs = 35000; // Aggressive increase to 35s for slow cold starts
+            const retryDelays = [0, 2000, 5000, 10000, 20000]; // Longer backoff
 
-            if (error) throw error;
-            return data;
-        })();
+            console.log(`🔍 Fetching profile for: ${userId}${retryAttempt > 0 ? ` (attempt ${retryAttempt + 1}/${maxRetries})` : ''}`);
 
-        const timeoutPromise = new Promise<null>((_, reject) => setTimeout(() => {
-            reject(new Error(`Profile fetch timed out (${timeoutMs}ms). Database may be asleep or connection slow.`));
-        }, timeoutMs));
+            const innerPromise = (async () => {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .maybeSingle();
 
-        try {
-            const start = Date.now();
-            const data: any = await Promise.race([fetchPromise, timeoutPromise]);
-            const duration = Date.now() - start;
-            if (duration > 3000) console.warn(`🐌 Profile fetch took ${duration}ms`);
+                if (error) throw error;
+                return data;
+            })();
 
-            if (!data) {
-                console.log("📭 Profile not found in database");
+            const timeoutPromise = new Promise<null>((_, reject) => setTimeout(() => {
+                reject(new Error(`Profile fetch timed out (${timeoutMs}ms). Database may be asleep or connection slow.`));
+            }, timeoutMs));
 
-                // Retry if profile doesn't exist and we haven't exhausted retries
-                if (retryAttempt < maxRetries - 1) {
+            try {
+                const start = Date.now();
+                const data: any = await Promise.race([innerPromise, timeoutPromise]);
+                const duration = Date.now() - start;
+                if (duration > 3000) console.warn(`🐌 Profile fetch took ${duration}ms`);
+
+                if (!data) {
+                    console.log("📭 Profile not found in database");
+
+                    // Retry if profile doesn't exist and we haven't exhausted retries
+                    if (retryAttempt < maxRetries - 1) {
+                        const delay = retryDelays[retryAttempt + 1];
+                        console.log(`⏳ Retrying in ${delay}ms (profile may be creating via trigger)...`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return this.getProfile(userId, retryAttempt + 1);
+                    }
+
+                    return null;
+                }
+
+                console.log("✅ Profile fetched successfully");
+                return {
+                    id: data.id,
+                    email: data.email,
+                    samplesUsed: data.samples_used,
+                    storeCreditBalance: data.store_credit_balance || 0,
+                    isAdmin: data.is_admin || false,
+                    lastSampleAt: data.last_sample_at
+                };
+            } catch (err) {
+                const isTimeout = err instanceof Error && err.message.includes('timed out');
+
+                if (isTimeout) {
+                    console.warn(`⏱️ Profile fetch timeout (${timeoutMs}ms)`);
+                } else {
+                    console.error("❌ Profile fetch error:", err);
+                }
+
+                if (isTimeout && retryAttempt < maxRetries - 1) {
                     const delay = retryDelays[retryAttempt + 1];
-                    console.log(`⏳ Retrying in ${delay}ms (profile may be creating via trigger)...`);
+                    console.log(`⏳ Retrying in ${delay}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return this.getProfile(userId, retryAttempt + 1);
                 }
 
                 return null;
+            } finally {
+                if (retryAttempt === 0) profileCache.delete(userId);
             }
+        })();
 
-            console.log("✅ Profile fetched successfully");
-            return {
-                id: data.id,
-                email: data.email,
-                samplesUsed: data.samples_used,
-                storeCreditBalance: data.store_credit_balance || 0,
-                isAdmin: data.is_admin || false,
-                lastSampleAt: data.last_sample_at
-            };
-        } catch (err) {
-            const isTimeout = err instanceof Error && err.message.includes('timed out');
-
-            if (isTimeout) {
-                console.warn(`⏱️ Profile fetch timeout (${timeoutMs}ms)`);
-            } else {
-                console.error("❌ Profile fetch error:", err);
-            }
-
-            // Retry on timeout if we haven't exhausted retries
-            if (isTimeout && retryAttempt < maxRetries - 1) {
-                const delay = retryDelays[retryAttempt + 1];
-                console.log(`⏳ Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return this.getProfile(userId, retryAttempt + 1);
-            }
-
-            // Return null instead of throwing - let caller handle gracefully
-            return null;
-        }
+        if (retryAttempt === 0) profileCache.set(userId, fetchPromise);
+        return fetchPromise;
     },
 
     async createProfile(userId: string, email: string): Promise<UserProfile> {
@@ -246,9 +258,9 @@ export const supabaseService = {
     // --- Image Storage ---
     async uploadImage(userId: string, bookId: string, pageNumber: number | string, base64: string, isColored: boolean = false): Promise<string> {
         const bucket = isColored ? 'colored-masterpieces' : 'story-images';
-        const filePath = `${userId}/${bookId}/page_${pageNumber}.png`;
+        const filePath = `${userId} /${bookId}/page_${pageNumber}.png`;
 
-        console.log(`[STORAGE] Uploading to ${bucket}: ${filePath}`, { userId, bookId, pageNumber });
+        console.log(`[STORAGE] Uploading to ${bucket}: ${filePath} `, { userId, bookId, pageNumber });
 
         // Offload Binary Conversion to Worker
         const blob = await new Promise<Blob>((resolve, reject) => {
@@ -306,8 +318,8 @@ export const supabaseService = {
     async uploadPDF(userId: string, bookId: string, type: 'interior' | 'cover', blob: Blob): Promise<string> {
         const bucket = 'pdfs';
         const timestamp = Date.now();
-        const filePath = `${userId}/${bookId}/${type}_${timestamp}.pdf`;
-        console.log(`[STORAGE] Uploading to ${bucket}: ${filePath}`, { userId, bookId, type });
+        const filePath = `${userId} /${bookId}/${type}_${timestamp}.pdf`;
+        console.log(`[STORAGE] Uploading to ${bucket}: ${filePath} `, { userId, bookId, type });
 
         const { error } = await supabase.storage.from(bucket).upload(filePath, blob, {
             upsert: true,
@@ -315,21 +327,21 @@ export const supabaseService = {
         });
 
         if (error) {
-            console.error(`❌ PDF Upload failed for ${type}:`, error);
+            console.error(`❌ PDF Upload failed for ${type}: `, error);
             throw error;
         }
 
-        console.log(`✅ ${type} PDF uploaded. Creating signed URL...`);
+        console.log(`✅ ${type} PDF uploaded.Creating signed URL...`);
 
         // Get Signed URL (valid for 24 hours)
         const { data, error: signedError } = await supabase.storage.from(bucket).createSignedUrl(filePath, 86400);
 
         if (signedError) {
-            console.error(`❌ Failed to create signed URL for ${type}:`, signedError);
+            console.error(`❌ Failed to create signed URL for ${type}: `, signedError);
             throw signedError;
         }
 
-        console.log(`🔗 Signed URL created:`, data.signedUrl.substring(0, 50) + "...");
+        console.log(`🔗 Signed URL created: `, data.signedUrl.substring(0, 50) + "...");
         return data.signedUrl;
     },
 
@@ -342,8 +354,8 @@ export const supabaseService = {
         const { data: books, error, count } = await supabase
             .from('books')
             .select(`
-                *,
-                pages:pages(generated_image_url, colored_image_url)
+    *,
+    pages: pages(generated_image_url, colored_image_url)
             `, { count: 'exact' })
             .eq('user_id', userId)
             .order('created_at', { ascending: false })

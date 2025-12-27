@@ -39,6 +39,8 @@ export const StoryInputForm: React.FC<StoryInputFormProps> = ({ onSubmit, onAddT
         try {
             await onSubmit(input);
         } catch (err) {
+            console.error("Generate error caught in form:", err);
+        } finally {
             setIsGenerating(false);
         }
     };
