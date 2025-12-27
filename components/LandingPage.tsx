@@ -63,12 +63,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleStartClick = () => {
+    const openAuth = (view: AuthView = 'LOGIN') => {
+        setAuthView(view);
         setShowAuthModal(true);
         setAuthStatus('idle');
         setAuthError('');
-        setAuthView('LOGIN');
+        setIsMobileMenuOpen(false); // Close menu when opening modal
     };
+
+    const handleStartClick = () => openAuth('LOGIN');
 
     const handleAuthSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -211,7 +214,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
                             {user ? (
                                 <button onClick={handleLogout} className="font-black text-[13px] uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors">Sign Out</button>
                             ) : (
-                                <button onClick={handleStartClick} className="font-black text-[13px] uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors">Sign In / Sign Up</button>
+                                <div className="flex items-center gap-8">
+                                    <button onClick={() => openAuth('LOGIN')} className="font-black text-[13px] uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors">Sign In</button>
+                                    <button onClick={() => openAuth('SIGNUP')} className="font-black text-[13px] uppercase tracking-widest text-slate-500 hover:text-indigo-600 transition-colors">Sign Up</button>
+                                </div>
                             )}
                             <button
                                 onClick={user ? () => onLogin('reload') : handleStartClick}
@@ -255,8 +261,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onLogin, user, onLogou
                             <button onClick={handleLogout} className="text-white/60 font-black text-xs uppercase tracking-widest">Sign Out</button>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-5 w-full max-w-xs">
-                            <button onClick={() => { handleStartClick(); setIsMobileMenuOpen(false); }} className="bg-[#FF721F] text-white w-full py-5 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl shadow-orange-500/40 active:scale-95 transition-all">Start Coloring Now</button>
+                        <div className="flex flex-col gap-6 w-full max-w-xs">
+                            <button onClick={() => openAuth('LOGIN')} className="bg-[#FF721F] text-white w-full py-5 rounded-full font-black text-sm uppercase tracking-widest shadow-2xl shadow-orange-500/40 active:scale-95 transition-all">Start Coloring Now</button>
+
+                            <div className="flex items-center justify-center gap-8 pt-2">
+                                <button onClick={() => openAuth('LOGIN')} className="text-white/60 hover:text-white font-black text-xs uppercase tracking-widest transition-colors border-b border-white/10 pb-1">Sign In</button>
+                                <button onClick={() => openAuth('SIGNUP')} className="text-white/60 hover:text-white font-black text-xs uppercase tracking-widest transition-colors border-b border-white/10 pb-1">Sign Up</button>
+                            </div>
                         </div>
                     )}
                 </div>
