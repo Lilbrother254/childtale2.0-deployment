@@ -39,8 +39,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
 
                   <div className="text-lg md:text-xl text-slate-600 leading-relaxed max-w-lg font-medium space-y-4">
                      <p>
-                        ChildTale transforms your child's dreams into personalized <span className="font-bold text-slate-900 bg-yellow-100 px-1">25-page coloring books</span>—where <span className="font-bold text-slate-900">they're the hero of every page...</span>
-                        INCLUDE MILESTONES, MEMORIES, ADVENTURES EVEN MADE UP STORIES.
+                        ChildTale transforms your child's <span className="text-indigo-600 font-bold">dreams, milestones, adventures, memories,</span> even made-up stories into personalized <span className="font-bold text-slate-900 bg-yellow-100 px-1">25-page coloring books</span>—where <span className="font-bold text-slate-900">they're the hero of every page</span>, created in minutes.
                      </p>
                   </div>
 
