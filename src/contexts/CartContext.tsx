@@ -92,30 +92,43 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
         }
 
-        console.log("🛒 addToCart triggered:", { input, userId: user?.id });
+        console.log("🛒 addToCart (Optimistic) triggered:", { input, userId: user?.id });
         if (!user) {
             console.error("❌ No user found in addToCart");
             return;
         }
 
+        // 1. Create a temporary ID and add to state immediately
+        const tempId = `TEMP_${crypto.randomUUID()}`;
+        const newCartItem: CartItem = {
+            id: tempId,
+            bookId: tempId, // Temporary pointer
+            title: `${input.childName}'s Adventure`,
+            type: 'DIGITAL',
+            price: 24.99,
+            inputDetails: input
+        };
+
+        setCart(prev => [...prev, newCartItem]);
+        console.log("⚡ Optimistic UI update: Item added to local state.");
+
+        // 2. Perform DB sync in background
         try {
             isProcessing.current = true;
-            console.log("⏳ Pre-creating book draft for cart...");
+            console.log("⏳ Syncing book draft to database...");
             const bookId = await supabaseService.createBook(user.id, input, `${input.childName}'s Adventure`, 'draft');
-            console.log("✅ Cart book created with ID:", bookId);
-            const newCartItem: CartItem = {
-                id: crypto.randomUUID(),
-                bookId: bookId,
-                title: `${input.childName}'s Adventure`,
-                type: 'DIGITAL',
-                price: 24.99,
-                inputDetails: input
-            };
-            setCart(prev => [...prev, newCartItem]);
-            console.log("✅ Added to local cart state");
+            console.log("✅ DB Sync Complete. Book ID:", bookId);
+
+            // 3. Swap the temporary ID with the real database ID
+            setCart(prev => prev.map(item =>
+                item.id === tempId
+                    ? { ...item, id: bookId, bookId: bookId }
+                    : item
+            ));
         } catch (err) {
-            console.error("❌ Cart Add Error:", err);
-            throw err;
+            console.error("❌ DB Sync Failed for Cart Item:", err);
+            // Optional: Rollback if needed, but since it's in localStorage too, we might leave it or notify user.
+            // For now, let's keep it in the cart but it won't be "synced" cross-device until retry.
         } finally {
             isProcessing.current = false;
         }
