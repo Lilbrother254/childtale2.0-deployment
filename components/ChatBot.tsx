@@ -29,9 +29,10 @@ POLICIES (CRITICAL):
 
 ABOUT CHILDTALE:
 - Personalized children's story generator powered by ChildTale's Magic.
+- NO PHOTOS REQUIRED: We value your child's privacy. We do NOT use or support photo uploads. 
+- Character consistency: Your child looks the same across all 25 pages! This is achieved entirely through a text description you provide.
 - Creates professional coloring book pages (B&W line art, perfect for coloring).
 - Digital coloring in the "Magic Studio" or download high-quality PDFs to print at home.
-- Character consistency: Your child looks the same across all 25 pages!
 - Free 5-page sample for every new user.
 
 PRICING:
