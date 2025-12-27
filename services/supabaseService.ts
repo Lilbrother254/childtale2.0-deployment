@@ -177,8 +177,15 @@ export const supabaseService = {
                     user_id: userId,
                     title,
                     status,
-                    input_details: input,
-                    is_purchased: status !== 'draft'
+                    is_purchased: status !== 'draft',
+                    // Map input fields to actual columns
+                    category: input.category,
+                    child_name: input.childName,
+                    child_age: input.childAge,
+                    child_gender: input.childGender,
+                    character_description: input.characterDescription,
+                    original_prompt: input.prompt,
+                    page_count: input.pageCount
                 })
                 .select()
                 .single();
@@ -198,8 +205,8 @@ export const supabaseService = {
             }
             throw err;
         } finally {
-            // Keep lock for 5 seconds to prevent accidental double-tap bounce
-            setTimeout(() => creationLock.delete(lockKey), 5000);
+            // Keep lock for 2 seconds (reduced from 5s) to prevent double-tap without blocking retries
+            setTimeout(() => creationLock.delete(lockKey), 2000);
         }
     },
 
