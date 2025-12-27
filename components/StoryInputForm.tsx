@@ -41,7 +41,8 @@ export const StoryInputForm: React.FC<StoryInputFormProps> = ({ onSubmit, onAddT
         } catch (err) {
             console.error("Generate error caught in form:", err);
         } finally {
-            setIsGenerating(false);
+            // 1 second cooldown to allow state to propagate
+            setTimeout(() => setIsGenerating(false), 1000);
         }
     };
 
@@ -50,8 +51,12 @@ export const StoryInputForm: React.FC<StoryInputFormProps> = ({ onSubmit, onAddT
         setIsAddingToCart(true);
         try {
             await onAddToCart(input);
+        } catch (err) {
+            console.error("Add to cart error caught in form:", err);
+            alert("A small magical hiccup occurred while adding to cart. Please try again.");
         } finally {
-            setIsAddingToCart(false);
+            // 1 second cooldown
+            setTimeout(() => setIsAddingToCart(false), 1000);
         }
     };
 

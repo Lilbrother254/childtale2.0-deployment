@@ -37,6 +37,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const hydratedUserId = React.useRef<string | null>(null);
+
     useEffect(() => {
         let isMounted = true;
 
@@ -78,7 +80,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     });
                 }
 
-                // 4. Background Profile Hydration (with built-in retry logic)
+                // 4. SMART HYDRATION: Don't hammer the server if we just did this
+                if (hydratedUserId.current === session.user.id && user?.samplesUsed !== undefined) {
+                    console.log("🤫 Skipping hydration - already have full profile");
+                    return;
+                }
+
+                // 5. Background Profile Hydration (with built-in cache/dedup)
                 try {
                     const profile = await supabaseService.getProfile(session.user.id);
 
@@ -86,19 +94,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         if (profile) {
                             console.log("✅ Profile hydrated successfully");
                             setUser(profile);
+                            hydratedUserId.current = session.user.id;
                         } else {
-                            console.warn("⚠️ Profile fetch failed after retries - keeping shell user (app remains functional)");
-                            // Keep the shell user we set above - app remains functional
+                            console.warn("⚠️ Profile fetch failed/timed out - keeping shell");
                         }
                     }
                 } catch (err) {
-                    // This should rarely happen now since getProfile returns null instead of throwing
                     console.error("❌ Unexpected Profile Hydration Error:", err);
-                    if (isMounted) {
-                        console.warn("⚠️ Keeping shell user despite error");
-                    }
                 } finally {
-                    // CRITICAL: Always set loading to false, regardless of success/failure
                     if (isMounted) {
                         setIsLoading(false);
                         console.log("🏁 Auth loading complete");
@@ -107,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
                 if (isMounted) {
                     setUser(null);
+                    hydratedUserId.current = null;
                     setIsLoading(false);
                 }
             }

@@ -53,13 +53,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => clearTimeout(timer);
     }, [user, cart.length]); // Re-run when cart size changes or user changes
 
+    const isProcessing = React.useRef(false);
+
     const addToCart = async (input: UserInput) => {
+        if (isProcessing.current) {
+            console.warn("⚠️ addToCart already in progress, skipping...");
+            return;
+        }
+
         console.log("🛒 addToCart triggered:", { input, userId: user?.id });
         if (!user) {
             console.error("❌ No user found in addToCart");
             return;
         }
+
         try {
+            isProcessing.current = true;
             console.log("⏳ Pre-creating book draft for cart...");
             const bookId = await supabaseService.createBook(user.id, input, `${input.childName}'s Adventure`, 'draft');
             console.log("✅ Cart book created with ID:", bookId);
@@ -76,6 +85,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (err) {
             console.error("❌ Cart Add Error:", err);
             throw err;
+        } finally {
+            isProcessing.current = false;
         }
     };
 

@@ -2,21 +2,33 @@ import { supabase } from '../utils/supabaseClient';
 import { Story, StoryPage, UserInput, UserProfile } from '../types';
 import BinaryWorker from '../src/workers/binary.worker?worker';
 
+// Profile Cache with TTL (Time To Live) to prevent "Event Storming"
 const profileCache = new Map<string, Promise<UserProfile | null>>();
+const profileCacheMetadata = new Map<string, { timestamp: number, data: UserProfile | null }>();
+const PROFILE_TTL_MS = 60000; // 60 seconds
+
+const creationLock = new Set<string>(); // Prevent duplicate book creation for the same user/prompt combination
 
 export const supabaseService = {
     // --- Profile & Credits ---
     async getProfile(userId: string, retryAttempt: number = 0): Promise<UserProfile | null> {
-        // Dedup: If a fetch for this user is already in progress, return the same promise
+        // 1. Check TTL Cache first (Instant memory return)
+        const cached = profileCacheMetadata.get(userId);
+        if (cached && (Date.now() - cached.timestamp < PROFILE_TTL_MS) && retryAttempt === 0) {
+            console.log(`🧠 Returning cached profile for: ${userId}`);
+            return cached.data;
+        }
+
+        // 2. Dedup: If a fetch for this user is already in progress, return the same promise
         if (profileCache.has(userId) && retryAttempt === 0) {
             console.log(`📎 Reusing pending profile fetch for: ${userId}`);
             return profileCache.get(userId)!;
         }
 
         const fetchPromise = (async () => {
-            const maxRetries = 3; // Reduced from 5 - don't hold up the app forever
-            const timeoutMs = 15000; // Reduced from 35s - faster feedback for slow connections
-            const retryDelays = [0, 1000, 3000]; // Faster retries
+            const maxRetries = 2; // Reduced from 3
+            const timeoutMs = 10000; // Reduced from 15s - fail fast rather than clog
+            const retryDelays = [0, 1000]; // Minimal retries
 
             console.log(`🔍 Fetching profile for: ${userId}${retryAttempt > 0 ? ` (attempt ${retryAttempt + 1}/${maxRetries})` : ''}`);
 
@@ -41,15 +53,13 @@ export const supabaseService = {
                 if (!data) {
                     console.log("📭 Profile not found");
                     if (retryAttempt < maxRetries - 1) {
-                        const delay = retryDelays[retryAttempt + 1];
-                        await new Promise(resolve => setTimeout(resolve, delay));
+                        await new Promise(resolve => setTimeout(resolve, retryDelays[retryAttempt + 1]));
                         return this.getProfile(userId, retryAttempt + 1);
                     }
                     return null;
                 }
 
-                console.log("✅ Profile fetched");
-                return {
+                const profile = {
                     id: data.id,
                     email: data.email,
                     samplesUsed: data.samples_used,
@@ -57,20 +67,24 @@ export const supabaseService = {
                     isAdmin: data.is_admin || false,
                     lastSampleAt: data.last_sample_at
                 };
+
+                // Update TTL Cache
+                profileCacheMetadata.set(userId, { timestamp: Date.now(), data: profile });
+                console.log("✅ Profile fetched & cached");
+                return profile;
             } catch (err) {
                 const isTimeout = err instanceof Error && err.message.includes('timed out');
                 if (isTimeout && retryAttempt < maxRetries - 1) {
-                    const delay = retryDelays[retryAttempt + 1];
                     console.log(`⏳ Retrying profile fetch (${retryAttempt + 1})...`);
-                    await new Promise(resolve => setTimeout(resolve, delay));
+                    await new Promise(resolve => setTimeout(resolve, retryDelays[retryAttempt + 1]));
                     return this.getProfile(userId, retryAttempt + 1);
                 }
                 console.warn("⚠️ Profile fetch failed/timed out - using shell");
                 return null;
             } finally {
-                // Only delete from cache if we are the root call
+                // Only delete from active fetch cache if we are the root call
                 if (retryAttempt === 0) {
-                    setTimeout(() => profileCache.delete(userId), 5000); // Keep in cache for 5s to stop rapid fire events
+                    profileCache.delete(userId);
                 }
             }
         })();
@@ -143,41 +157,50 @@ export const supabaseService = {
 
 
     // --- Story Persistence ---
-    async createBook(userId: string, input: UserInput, title: string, status: string = 'generating'): Promise<string> {
-        console.log("✨ createBook starting for:", title);
+    async createBook(userId: string, input: UserInput, title: string, status: 'draft' | 'pending' | 'generating' | 'completed' = 'pending'): Promise<string> {
+        const lockKey = `${userId}:${input.prompt.slice(0, 50)}`;
+        if (creationLock.has(lockKey)) {
+            console.warn("⚠️ Already creating this book, waiting for lock...");
+            throw new Error("Creation already in progress for this story idea.");
+        }
 
-        const insertPromise = (async () => {
-            const { data, error } = await supabase.from('books').insert({
-                user_id: userId,
-                title: title,
-                category: input.category,
-                child_name: input.childName,
-                child_age: input.childAge,
-                child_gender: input.childGender,
-                character_description: input.characterDescription,
-                original_prompt: input.prompt,
-                page_count: input.pageCount,
-                status: status,
-                subtitle: input.subtitle,
-                author_name: input.authorName,
-                isbn: input.isbn,
-                description: input.description,
-                keywords: input.keywords,
-                copyright_year: input.copyrightYear
-            }).select('id').single();
+        try {
+            creationLock.add(lockKey);
+            console.log("✨ createBook starting for:", title);
+            const timeoutMs = 45000;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+            const { data, error } = await supabase
+                .from('books')
+                .insert({
+                    user_id: userId,
+                    title,
+                    status,
+                    input_details: input,
+                    is_purchased: status !== 'draft'
+                })
+                .select()
+                .single();
+
+            clearTimeout(timeoutId);
 
             if (error) {
                 console.error("❌ createBook Database Error:", error);
                 throw error;
             }
+            if (!data) throw new Error("No data returned from creation");
+
             return data.id;
-        })();
-
-        const timeoutPromise = new Promise<string>((_, reject) => setTimeout(() => {
-            reject(new Error("Magic book creation timed out (45s). Please check your connection."));
-        }, 45000));
-
-        return await Promise.race([insertPromise, timeoutPromise]);
+        } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') {
+                throw new Error(`Magic book creation timed out (45s). Please check your connection.`);
+            }
+            throw err;
+        } finally {
+            // Keep lock for 5 seconds to prevent accidental double-tap bounce
+            setTimeout(() => creationLock.delete(lockKey), 5000);
+        }
     },
 
     async updateBookStatus(bookId: string, status: string, isPurchased?: boolean) {
