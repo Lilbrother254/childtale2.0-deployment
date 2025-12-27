@@ -14,9 +14,9 @@ export const supabaseService = {
         }
 
         const fetchPromise = (async () => {
-            const maxRetries = 5;
-            const timeoutMs = 35000; // Aggressive increase to 35s for slow cold starts
-            const retryDelays = [0, 2000, 5000, 10000, 20000]; // Longer backoff
+            const maxRetries = 3; // Reduced from 5 - don't hold up the app forever
+            const timeoutMs = 15000; // Reduced from 35s - faster feedback for slow connections
+            const retryDelays = [0, 1000, 3000]; // Faster retries
 
             console.log(`🔍 Fetching profile for: ${userId}${retryAttempt > 0 ? ` (attempt ${retryAttempt + 1}/${maxRetries})` : ''}`);
 
@@ -32,30 +32,23 @@ export const supabaseService = {
             })();
 
             const timeoutPromise = new Promise<null>((_, reject) => setTimeout(() => {
-                reject(new Error(`Profile fetch timed out (${timeoutMs}ms). Database may be asleep or connection slow.`));
+                reject(new Error(`Profile fetch timed out (${timeoutMs}ms)`));
             }, timeoutMs));
 
             try {
-                const start = Date.now();
                 const data: any = await Promise.race([innerPromise, timeoutPromise]);
-                const duration = Date.now() - start;
-                if (duration > 3000) console.warn(`🐌 Profile fetch took ${duration}ms`);
 
                 if (!data) {
-                    console.log("📭 Profile not found in database");
-
-                    // Retry if profile doesn't exist and we haven't exhausted retries
+                    console.log("📭 Profile not found");
                     if (retryAttempt < maxRetries - 1) {
                         const delay = retryDelays[retryAttempt + 1];
-                        console.log(`⏳ Retrying in ${delay}ms (profile may be creating via trigger)...`);
                         await new Promise(resolve => setTimeout(resolve, delay));
                         return this.getProfile(userId, retryAttempt + 1);
                     }
-
                     return null;
                 }
 
-                console.log("✅ Profile fetched successfully");
+                console.log("✅ Profile fetched");
                 return {
                     id: data.id,
                     email: data.email,
@@ -66,23 +59,19 @@ export const supabaseService = {
                 };
             } catch (err) {
                 const isTimeout = err instanceof Error && err.message.includes('timed out');
-
-                if (isTimeout) {
-                    console.warn(`⏱️ Profile fetch timeout (${timeoutMs}ms)`);
-                } else {
-                    console.error("❌ Profile fetch error:", err);
-                }
-
                 if (isTimeout && retryAttempt < maxRetries - 1) {
                     const delay = retryDelays[retryAttempt + 1];
-                    console.log(`⏳ Retrying in ${delay}ms...`);
+                    console.log(`⏳ Retrying profile fetch (${retryAttempt + 1})...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     return this.getProfile(userId, retryAttempt + 1);
                 }
-
+                console.warn("⚠️ Profile fetch failed/timed out - using shell");
                 return null;
             } finally {
-                if (retryAttempt === 0) profileCache.delete(userId);
+                // Only delete from cache if we are the root call
+                if (retryAttempt === 0) {
+                    setTimeout(() => profileCache.delete(userId), 5000); // Keep in cache for 5s to stop rapid fire events
+                }
             }
         })();
 
@@ -501,7 +490,8 @@ export const supabaseService = {
         const { data, error } = await supabase
             .from('books')
             .select('id')
-            .in('id', bookIds);
+            .in('id', bookIds)
+            .eq('is_purchased', false); // ONLY return books that are still drafts/not purchased
 
         if (error) return [];
         return data.map(b => b.id);

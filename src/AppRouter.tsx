@@ -129,16 +129,26 @@ export const AppRouter: React.FC = () => {
     };
 
     const handlePaymentSuccess = async (type: 'digital' | 'print' | 'cart') => {
+        console.log("🎖️ Payment Success Handler Triggered:", type);
         setShowPaymentModal(false);
 
-        // CRITICAL FIX: Capture the ID BEFORE clearing it
+        // Capture IDs before clearing
         const capturedBookId = activeStory?.id || checkoutStoryId;
+
+        // Clear references
         setCheckoutStoryId(null);
 
-        if (type === 'cart') clearCart();
-        if (pendingInput && type !== 'cart') {
+        if (type === 'cart') {
+            console.log("🛒 Clearing cart after checkout...");
+            clearCart();
+            // After cart checkout, we should go to Library to see all new books
+            setAppState(AppState.LIBRARY);
+            return;
+        }
+
+        if (pendingInput) {
+            console.log("🚀 Starting generation from pending input...");
             setAppState(AppState.GENERATING_STORY);
-            // Use the captured ID to ensure we don't lose it
             generateStory(pendingInput, capturedBookId || undefined).then(() => {
                 setPendingInput(null);
                 setAppState(AppState.PREVIEW);
@@ -147,6 +157,7 @@ export const AppRouter: React.FC = () => {
                 setAppState(AppState.LIBRARY);
             });
         } else {
+            console.log("📚 Transitioning to Library...");
             setAppState(AppState.LIBRARY);
         }
     };

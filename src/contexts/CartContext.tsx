@@ -35,14 +35,23 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!user || cart.length === 0) return;
         const validate = async () => {
             const bookIds = cart.map(item => item.bookId);
-            const validIds = await supabaseService.validateCartBooks(bookIds);
-            const validCart = cart.filter(item => validIds.includes(item.bookId));
+            const validItems = await supabaseService.validateCartBooks(bookIds);
+
+            // validItems now only contains IDs of books that:
+            // 1. Exist
+            // 2. Are NOT already purchased (backend should filter them out)
+            const validCart = cart.filter(item => validItems.includes(item.bookId));
+
             if (validCart.length !== cart.length) {
+                console.log("🛒 Auto-clearing purchased or invalid items from cart...");
                 setCart(validCart);
+                localStorage.setItem('childtale_cart', JSON.stringify(validCart));
             }
         };
-        validate();
-    }, [user]);
+        // Run validation with a small delay to allow DB updates to propagate on slow connections
+        const timer = setTimeout(validate, 2000);
+        return () => clearTimeout(timer);
+    }, [user, cart.length]); // Re-run when cart size changes or user changes
 
     const addToCart = async (input: UserInput) => {
         console.log("🛒 addToCart triggered:", { input, userId: user?.id });
