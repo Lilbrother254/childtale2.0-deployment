@@ -121,10 +121,10 @@ export const generateStoryStructure = async (
   try {
     const { data, error } = await supabase.functions.invoke('generate-story', {
       body: {
-        action: 'generate-text',
+        action: 'generate-story',
         payload: {
-          prompt: systemPrompt,
-          model: 'gemini-3-flash-preview'
+          systemPrompt: systemPrompt,
+          userPrompt: prompt // The actual story request
         }
       }
     });
@@ -141,7 +141,8 @@ export const generateStoryStructure = async (
 
     console.log("✅ Story Structure Generated");
     console.groupEnd();
-    return data.result;
+    // Use data.text as returned by the Edge Function
+    return data.text ? JSON.parse(data.text) : null;
 
   } catch (error) {
     console.error("Story structure generation failed:", error);
@@ -169,7 +170,7 @@ export const generateCharacterReference = async (
   try {
     const payload = {
       prompts: [prompt],
-      model: 'gemini-2.0-flash-exp' // Utilizing the Pro model speed/quality
+      model: 'gemini-2.5-flash-image' // Aligning with ChildTale 2.0 Visual Engine
     };
 
     const { data, error } = await supabase.functions.invoke('generate-story', {
@@ -323,10 +324,10 @@ export const sendChatMessage = async (
 
     const { data, error } = await supabase.functions.invoke('generate-story', {
       body: {
-        action: 'generate-text',
+        action: 'chat',
         payload: {
-          prompt: finalPrompt,
-          model: 'gemini-3-flash-preview' // Updated to ChildTale 2.0 Spec
+          messages: messages,
+          systemPrompt: context
         }
       }
     });
@@ -334,8 +335,8 @@ export const sendChatMessage = async (
     if (error) throw error;
     if (data.error) throw new Error(data.error);
 
-    // 'generate-story' returns the text in the 'result' field
-    return data.result || "Sparky is lost for words! ✨";
+    // 'generate-story' returns the text in the 'text' field
+    return data.text || "Sparky is lost for words! ✨";
 
   } catch (error) {
     console.error("Chat error:", error);
