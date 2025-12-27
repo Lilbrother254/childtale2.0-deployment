@@ -299,18 +299,44 @@ export const sendChatMessage = async (
   context: string
 ): Promise<string> => {
   try {
-    const { data, error } = await supabase.functions.invoke('chat-with-sparky', {
+    // WORKAROUND: Configuring "Gateway Pattern"
+    // Using the robust 'generate-story' function to handle chat, bypassing CORS issues on the standalone function.
+
+    // Construct a rich prompt that includes history
+    const conversationHistory = messages.map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n');
+
+    const finalPrompt = `
+      ACT AS SPARKY: The magical, playful customer support mascot for ChildTale.
+      
+      YOUR KNOWLEDGE BASE (CONTEXT):
+      ${context}
+      
+      CURRENT CONVERSATION:
+      ${conversationHistory}
+      
+      INSTRUCTION:
+      Reply to the USER's last message. 
+      - Be helpful but brief. 
+      - Use 1-2 emojis. 
+      - If you don't know, ask them to email childtale4@gmail.com.
+    `;
+
+    const { data, error } = await supabase.functions.invoke('generate-story', {
       body: {
-        message: messages[messages.length - 1].content,
-        context: context,
-        history: messages.slice(0, -1)
+        action: 'generate-text',
+        payload: {
+          prompt: finalPrompt,
+          model: 'gemini-2.0-flash-exp' // Using the smartest model for conversation
+        }
       }
     });
 
     if (error) throw error;
     if (data.error) throw new Error(data.error);
 
-    return data.reply;
+    // 'generate-story' returns the text in the 'result' field
+    return data.result || "Sparky is lost for words! ✨";
+
   } catch (error) {
     console.error("Chat error:", error);
     return "Sparky is taking a nap! 😴 (I'm having trouble connecting right now, please try again later!)";
