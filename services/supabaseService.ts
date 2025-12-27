@@ -324,6 +324,13 @@ export const supabaseService = {
         });
     },
 
+    async updatePageImage(bookId: string, pageNumber: number, imageUrl: string) {
+        await supabase.from('pages')
+            .update({ generated_image_url: imageUrl })
+            .eq('book_id', bookId)
+            .eq('page_number', pageNumber);
+    },
+
     async updatePageColor(bookId: string, pageNumber: number, coloredUrl: string) {
         await supabase.from('pages')
             .update({ colored_image_url: coloredUrl })
@@ -421,6 +428,18 @@ export const supabaseService = {
         });
 
         return safeBooks.map(book => this._mapBookToStory(book));
+    },
+
+    async getUserCart(userId: string): Promise<Story[]> {
+        const { data: books, error } = await supabase
+            .from('books')
+            .select('*, pages(*)')
+            .eq('user_id', userId)
+            .eq('status', 'draft')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return (books || []).map(book => this._mapBookToStory(book));
     },
 
     _mapBookToStory(book: any): Story {

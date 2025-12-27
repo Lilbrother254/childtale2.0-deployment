@@ -1,5 +1,19 @@
-
 import { supabase } from '../utils/supabaseClient';
+
+export async function downloadImageAsBase64(url: string): Promise<string> {
+  const resp = await fetch(url);
+  const blob = await resp.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      // Return full data URI for context compatibility
+      resolve(base64String);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 /**
  * ChildTale Pipeline - Stage 1: Adaptive Pre-Filtering
@@ -122,6 +136,8 @@ export const generateStoryStructure = async (
     `;
 
   try {
+    const GENERATE_STORY_URL = 'https://efdkugpvjfhzhfeciibk.supabase.co/functions/v1/generate-story';
+
     const { data, error } = await supabase.functions.invoke('generate-story', {
       body: {
         action: 'generate-story',

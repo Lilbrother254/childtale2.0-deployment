@@ -98,120 +98,171 @@ export const StoryProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
     }, [stories, user]);
 
-    async function processBackgroundStory(story: Story, shouldRefund: boolean = false) {
+    async function processBackgroundStory(story: Story, _shouldRefund: boolean = false) {
         if (!user) return;
+        let bookId: string = story.id;
         try {
-            // Re-construct basic input from story data (fallback if partial)
-            const input: UserInput = {
-                category: story.category,
-                childName: story.childName,
-                childAge: story.childAge,
-                childGender: story.childGender,
-                characterDescription: story.characterDescription || '',
-                prompt: story.originalPrompt || '',
-                pageCount: story.pageCount
-            };
+            // 1. Full Hydration Check for Resume
+            console.log(`🛰️ Syncing state for: ${story.title}`);
+            const fullStory = await supabaseService.getBookDetails(bookId);
+            if (!fullStory) throw new Error("Could not hydrate for sync");
 
-            const structure = await geminiService.generateStoryStructure(
-                input.childName,
-                input.childAge,
-                input.childGender,
-                input.category,
-                input.prompt,
-                input.characterDescription,
-                story.pageCount
-            );
-            await supabaseService.updateBookStatus(story.id, 'generating');
+            let structure: { pages: any[], characterDescription: string };
+            const existingPages = fullStory.pages || [];
 
-            // NEW: Generate Cast Bible first for character consistency
-            const charRefBase64 = await geminiService.generateCharacterReference(
-                input.childName,
-                input.childAge,
-                input.characterDescription,
-                structure.characterDescription
-            );
+            // 2. Resume Structure or Generate New
+            if (existingPages.length > 0) {
+                console.log("📝 Resuming existing story text...");
+                structure = {
+                    characterDescription: fullStory.characterDescription || '',
+                    pages: existingPages.map(p => ({
+                        pageNumber: p.pageNumber,
+                        text: p.text,
+                        imagePrompt: p.imagePrompt
+                    }))
+                };
+            } else {
+                console.log("🪄 Generating new story structure...");
+                const structureInput: UserInput = {
+                    category: fullStory.category,
+                    childName: fullStory.childName,
+                    childAge: fullStory.childAge,
+                    childGender: fullStory.childGender,
+                    characterDescription: fullStory.characterDescription || '',
+                    prompt: fullStory.originalPrompt || '',
+                    pageCount: fullStory.pageCount
+                };
+                structure = await geminiService.generateStoryStructure(
+                    structureInput.childName, structureInput.childAge, structureInput.childGender,
+                    structureInput.category, structureInput.prompt, structureInput.characterDescription,
+                    fullStory.pageCount
+                );
 
-            let characterReferenceUrl = '';
-            if (charRefBase64) {
-                // Determine file extension from base64 string
-                // Usually "data:image/png;base64,..."
-                // But for safety within uploadImage, we often just pass the base64 or a blob
-                // Uploading "Cast Bible" to storage...
-                characterReferenceUrl = await supabaseService.uploadImage(user.id, story.id, 'master_reference', charRefBase64);
-                await supabaseService.updateBookReference(story.id, characterReferenceUrl, structure.characterDescription);
+                // LOCK-IN: Save shell pages immediately to sync across devices
+                console.log("🔒 Locking in story text across devices...");
+                for (const p of structure.pages) {
+                    await supabaseService.addPage(bookId, {
+                        pageNumber: p.pageNumber,
+                        text: p.text,
+                        imagePrompt: p.imagePrompt
+                    });
+                }
             }
 
+            await supabaseService.updateBookStatus(bookId, 'generating');
+
+            // 3. Resume or Generate Cast Bible
+            let characterReferenceUrl = fullStory.characterReferenceUrl || '';
+            let charRefBase64: string | null = null;
+
+            if (!characterReferenceUrl) {
+                console.log("🎨 Generating new Cast Bible...");
+                charRefBase64 = await geminiService.generateCharacterReference(
+                    fullStory.childName, fullStory.childAge, fullStory.characterDescription || '',
+                    structure.characterDescription
+                );
+                if (charRefBase64) {
+                    characterReferenceUrl = await supabaseService.uploadImage(user.id, bookId, 'master_reference', charRefBase64);
+                    await supabaseService.updateBookReference(bookId, characterReferenceUrl, structure.characterDescription);
+                }
+            } else {
+                console.log("🎨 Reusing existing Cast Bible. Syncing visual reference...");
+                try {
+                    charRefBase64 = await geminiService.downloadImageAsBase64(characterReferenceUrl);
+                } catch (err) {
+                    console.warn("⚠️ Failed to download reference, will fallback to text prompt only.");
+                }
+            }
+
+            // 4. Generation Loop (Resume Missing Images)
             for (let i = 0; i < structure.pages.length; i++) {
-                // Pass the Cast Bible Reference to the page generator
+                const pageNum = i + 1;
+                // Check if this page ALREADY has an image (from another device/attempt)
+                const currentPages = (await supabaseService.getBookDetails(bookId))?.pages || [];
+                const pageInDb = currentPages.find(p => p.pageNumber === pageNum);
+
+                if (pageInDb?.imageUrl) {
+                    console.log(`✅ Skipping page ${pageNum} (Done)`);
+                    continue;
+                }
+
+                setGenerationProgress({
+                    currentStep: `Painting page ${pageNum} of ${structure.pages.length}`,
+                    progress: Math.round(((pageNum - 1) / structure.pages.length) * 100),
+                    totalImages: structure.pages.length,
+                    completedImages: pageNum - 1
+                });
+
                 const base64 = await geminiService.generateColoringPage(
                     structure.pages[i].imagePrompt,
                     structure.characterDescription,
                     charRefBase64 || null
                 );
-                const imageUrl = await supabaseService.uploadImage(user.id, story.id, i + 1, base64);
-                const newPage: StoryPage = {
-                    pageNumber: i + 1,
+
+                const imageUrl = await supabaseService.uploadImage(user.id, bookId, pageNum, base64);
+                await supabaseService.updatePageImage(bookId, pageNum, imageUrl);
+
+                // Update Local State Progress & Pages
+                const newStoryPage: StoryPage = {
+                    pageNumber: pageNum,
                     text: structure.pages[i].text,
                     imagePrompt: structure.pages[i].imagePrompt,
                     imageUrl: imageUrl
                 };
-                await supabaseService.addPage(story.id, newPage);
 
-                // Update Local State Progress & Pages
-                setStories(prev => prev.map(s => {
-                    if (s.id === story.id) {
-                        const updatedPages = [...s.pages];
-                        updatedPages[i] = newPage;
-                        return {
-                            ...s,
-                            pages: updatedPages,
-                            progress: 20 + Math.floor(((i + 1) / structure.pages.length) * 80)
-                        };
-                    }
-                    return s;
-                }));
+                setStories(prev => prev.map(s =>
+                    s.id === bookId
+                        ? { ...s, pages: [...(s.pages || []).filter(p => p.pageNumber !== pageNum), newStoryPage].sort((a, b) => a.pageNumber - b.pageNumber), status: 'generating' }
+                        : s
+                ));
             }
 
-            // COMPLETION GUARD: Only mark as completed if we have all pages
-            const expectedPages = story.pageCount || structure.pages.length;
-            const actualPages = structure.pages.length;
+            setGenerationProgress({ currentStep: "Finalizing Magic...", progress: 100 });
+
+            // Final check and complete
+            const finalDetails = await supabaseService.getBookDetails(bookId);
+            const actualPages = finalDetails?.pages.filter(p => p.imageUrl).length || 0;
+            const expectedPages = story.pageCount;
 
             if (actualPages === expectedPages) {
-                await supabaseService.updateBookStatus(story.id, 'completed', true);
+                await supabaseService.updateBookStatus(bookId, 'completed', story.pageCount === 5);
             } else {
-                console.warn(`⚠️ Book ${story.id} incomplete: ${actualPages}/${expectedPages} pages. Marking as failed.`);
-                await supabaseService.updateBookStatus(story.id, 'failed');
+                console.warn(`⚠️ Book ${bookId} incomplete: ${actualPages}/${expectedPages} pages. Marking as failed.`);
+                await supabaseService.updateBookStatus(bookId, 'failed');
             }
 
-            const refreshed = await supabaseService.getUserStories(user.id);
-            setStories(refreshed);
+            if (story.pageCount === 5) await supabaseService.recordSampleUsed(user.id);
+
+            const updated = await supabaseService.getUserStories(user.id);
+            setStories(updated);
+            const finalStory = updated.find(s => s.id === bookId);
+            if (finalStory) setActiveStory(finalStory);
+
         } catch (error: any) {
-            console.error("Background Gen Failed:", error);
+            console.error("Background Process Failed:", error);
             const isQuota = error.message?.includes("magic limit") || error.message?.includes("429");
 
-            await supabaseService.updateBookStatus(story.id, 'failed');
-            // Update local state if this is the active story
-            setActiveStory(prev => prev && prev.id === story.id ? { ...prev, status: 'failed' } : prev);
-
             if (isQuota) {
-                // If it's a quota error, we might want to alert if it's the active story
-                if (activeStory?.id === story.id) {
-                    alert("🌟 Our magic is taking a quick break! We've hit our daily magic limit. Please try again in a few hours.");
-                }
+                alert("🌟 Our magic is taking a quick break! We've hit our daily quota for free stories. Please try again tomorrow, or upgrade to our Premium plan for unlimited creation.");
             }
 
-            // Auto-refresh library to show updated status
+            if (bookId) {
+                await supabaseService.updateBookStatus(bookId, 'failed');
+                setActiveStory(prev => prev && prev.id === bookId ? { ...prev, status: 'failed' } : prev);
+            }
+
             try {
                 const refreshed = await supabaseService.getUserStories(user.id);
                 setStories(refreshed);
-                console.log("✅ Library auto-refreshed after background generation failure");
             } catch (refreshError) {
                 console.error("❌ Failed to auto-refresh library:", refreshError);
             }
         } finally {
-            processingQueue.current.delete(story.id);
+            setIsGenerating(false);
+            setGenerationProgress(null);
+            processingQueue.current.delete(bookId);
         }
-    };
+    }
 
     const generateStory = async (input: UserInput, existingBookId?: string) => {
         if (!user) return;

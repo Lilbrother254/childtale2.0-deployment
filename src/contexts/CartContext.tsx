@@ -30,28 +30,59 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('childtale_cart', JSON.stringify(cart));
     }, [cart]);
 
-    // Validate cart on load
+    // Universal Cart Sync: Hydrate from DB on login
+    useEffect(() => {
+        if (!user) return;
+
+        const syncCart = async () => {
+            try {
+                console.log("🏦 Syncing Universal Cart from DB...");
+                const dbCartItems = await supabaseService.getUserCart(user.id);
+
+                const syncedCart: CartItem[] = dbCartItems.map(story => ({
+                    id: story.id,
+                    bookId: story.id,
+                    title: story.title,
+                    type: 'DIGITAL',
+                    price: 24.99,
+                    inputDetails: {
+                        category: story.category,
+                        childName: story.childName,
+                        childAge: story.childAge,
+                        childGender: story.childGender,
+                        characterDescription: story.characterDescription || '',
+                        prompt: story.originalPrompt || '',
+                        pageCount: story.pageCount
+                    }
+                }));
+
+                setCart(syncedCart);
+                localStorage.setItem('childtale_cart', JSON.stringify(syncedCart));
+                console.log(`✅ Universal Cart synced: ${syncedCart.length} items`);
+            } catch (err) {
+                console.error("❌ Universal Cart Sync Failed:", err);
+            }
+        };
+
+        syncCart();
+    }, [user?.id]);
+
+    // Cleanup Logic: Ensure purchased items don't linger
     useEffect(() => {
         if (!user || cart.length === 0) return;
         const validate = async () => {
             const bookIds = cart.map(item => item.bookId);
             const validItems = await supabaseService.validateCartBooks(bookIds);
-
-            // validItems now only contains IDs of books that:
-            // 1. Exist
-            // 2. Are NOT already purchased (backend should filter them out)
             const validCart = cart.filter(item => validItems.includes(item.bookId));
 
             if (validCart.length !== cart.length) {
                 console.log("🛒 Auto-clearing purchased or invalid items from cart...");
                 setCart(validCart);
-                localStorage.setItem('childtale_cart', JSON.stringify(validCart));
             }
         };
-        // Run validation with a small delay to allow DB updates to propagate on slow connections
         const timer = setTimeout(validate, 2000);
         return () => clearTimeout(timer);
-    }, [user, cart.length]); // Re-run when cart size changes or user changes
+    }, [user, cart.length]);
 
     const isProcessing = React.useRef(false);
 
@@ -90,8 +121,20 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
-    const removeFromCart = (id: string) => {
+    const removeFromCart = async (id: string) => {
         setCart(prev => prev.filter(i => i.id !== id));
+        if (user) {
+            try {
+                // Use bookId for deletion if it's a synced item
+                const item = cart.find(i => i.id === id);
+                if (item) {
+                    await supabaseService.deleteBook(item.bookId);
+                    console.log("🗑️ Cart item deleted from database");
+                }
+            } catch (err) {
+                console.error("Failed to delete cart item from database:", err);
+            }
+        }
     };
 
     const updateItemType = (id: string, type: 'DIGITAL' | 'HARDCOVER') => {
