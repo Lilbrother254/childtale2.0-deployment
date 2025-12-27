@@ -33,7 +33,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     onSuccess,
     initialTab = 'DIGITAL'
 }) => {
-    const isCartMode = !!cartItems && cartItems.length > 0;
+    // If storyId is present, we are in "Direct Checkout" mode for that book.
+    // We only use Cart Mode if no specific story is targeted.
+    const isCartMode = !storyId && !!cartItems && cartItems.length > 0;
 
     // State for UI interactions
     const [activeTab, setActiveTab] = useState<PaymentTab>(initialTab);

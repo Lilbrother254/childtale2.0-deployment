@@ -32,7 +32,18 @@ export const AppRouter: React.FC = () => {
     const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState<Story | null>(null);
     const [activeColoringPage, setActiveColoringPage] = useState<number | null>(null);
-    const [pendingInput, setPendingInput] = useState<UserInput | null>(null);
+
+    // FIX: Persist pendingInput to survive refresh during checkout
+    const [pendingInput, setPendingInputState] = useState<UserInput | null>(() => {
+        const saved = sessionStorage.getItem('ct_pending_input');
+        return saved ? JSON.parse(saved) : null;
+    });
+
+    const setPendingInput = (input: UserInput | null) => {
+        setPendingInputState(input);
+        if (input) sessionStorage.setItem('ct_pending_input', JSON.stringify(input));
+        else sessionStorage.removeItem('ct_pending_input');
+    };
 
     // FIX: Persist checkoutStoryId to survive Auth/Context refreshes
     const [checkoutStoryId, setCheckoutStoryIdState] = useState<string | null>(() => {
@@ -298,7 +309,7 @@ export const AppRouter: React.FC = () => {
                     {/* MODALS */}
                     {showPaymentModal && <PaymentModal
                         userProfile={user}
-                        storyId={activeStory?.id || checkoutStoryId || undefined}
+                        storyId={checkoutStoryId || undefined}
                         storyTitle={activeStory?.title || pendingInput?.childName ? `${pendingInput?.childName}'s Adventure` : 'New Story'}
                         cartItems={cart}
                         cartTotal={cart.reduce((sum, item) => sum + item.price, 0)}
