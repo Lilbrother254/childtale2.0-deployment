@@ -41,14 +41,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onStartCreating }) => {
                      <p className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
                         ChildTale transforms your child's
                         <span className="relative inline-block mx-1.5 px-1">
-                           <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 font-black italic">dreams, milestones, adventures, memories,</span>
+                           <span className="relative z-10 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 font-black italic">dreams, milestones, adventures, memories, even made-up stories</span>
                            <span className="absolute bottom-1 left-0 w-full h-2 bg-indigo-50/50 -rotate-1"></span>
                         </span>
-                        even made-up stories into personalized
-                        <span className="relative inline-block mx-1.5 group">
-                           <span className="relative z-10 font-bold text-slate-900 px-3 py-1 bg-yellow-100/80 rounded-lg shadow-sm border border-yellow-200/50 group-hover:bg-yellow-200 transition-colors duration-300">25-page coloring books</span>
-                           <span className="absolute inset-0 bg-yellow-400/10 blur-xl opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                        </span>
+                        into personalized
+                        <span className="relative inline-block mx-1.5 px-2 py-0.5 bg-yellow-200/50 rounded-sm font-bold text-slate-900">25-page coloring books</span>
                         —where <span className="font-extrabold text-slate-900 border-b-2 border-orange-400/30">they're the hero of every page</span>, created in minutes.
                      </p>
                   </div>
